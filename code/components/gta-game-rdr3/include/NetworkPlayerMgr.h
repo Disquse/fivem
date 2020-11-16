@@ -15,6 +15,16 @@
 #define GTA_GAME_EXPORT DLL_IMPORT
 #endif
 
+#define DECLARE_ACCESSOR(x) \
+	decltype(impl.m1207.x)& x() \
+	{ \
+		return (impl.m1207.x); \
+	} \
+	const decltype(impl.m1207.x)& x() const \
+	{ \
+		return (impl.m1207.x); \
+	}
+
 namespace rage
 {
 	struct netNatType;
@@ -53,10 +63,22 @@ namespace rage
 
 class CNetGamePlayer : public rage::netPlayer
 {
+private:
+	struct Impl
+	{
+		uint8_t pad[16];
+		uint8_t activePlayerIndex;
+		uint8_t physicalPlayerIndex;
+	};
+
+	union
+	{
+		Impl m1207;
+	} impl;
+
 public:
-	uint8_t pad[16];
-	uint8_t activePlayerIndex;
-	uint8_t physicalPlayerIndex;
+	DECLARE_ACCESSOR(activePlayerIndex);
+	DECLARE_ACCESSOR(physicalPlayerIndex);
 };
 
 class CNetworkPlayerMgr
