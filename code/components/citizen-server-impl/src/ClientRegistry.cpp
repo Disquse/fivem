@@ -168,7 +168,9 @@ namespace fx
 
 			std::string target = fmt::sprintf("%d", client->GetNetId());
 
-			events->TriggerClientEventReplayed("onPlayerJoining", target, client->GetNetId(), client->GetName(), 128);
+			uint32_t bigModeSlot = (m_instance->GetComponent<fx::GameServer>()->GetGameName() == fx::GameName::GTA5) ? 128 : 16;
+
+			events->TriggerClientEventReplayed("onPlayerJoining", target, client->GetNetId(), client->GetName(), bigModeSlot);
 		}
 
 		// trigger connection handlers

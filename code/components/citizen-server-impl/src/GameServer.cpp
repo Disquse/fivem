@@ -715,6 +715,8 @@ namespace fx
 
 					auto host = m_clientRegistry->GetHost();
 
+					uint32_t bigModeSlot = (GetGameName() == fx::GameName::GTA5) ? 128 : 16;
+
 					auto outStr = fmt::sprintf(
 						" %d %d %d %d %lld",
 						client->GetNetId(),
@@ -722,7 +724,7 @@ namespace fx
 						(host) ? host->GetNetBase() : -1,
 						(IsOneSync())
 							? ((fx::IsBigMode())
-								? 128
+								? bigModeSlot
 								: client->GetSlotId())
 							: -1,
 						(IsOneSync()) ? msec().count() : -1);
