@@ -5,6 +5,7 @@
 		"fx[2]",
 		"net",
 		"gta:core",
+		"gta:game",
 		"rage:nutsnbolts",
 		"rage:scripting",
 		"vendor:websocketpp",
