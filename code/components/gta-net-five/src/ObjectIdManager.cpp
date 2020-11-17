@@ -12,6 +12,15 @@
 
 #include <MinHook.h>
 
+// REDM1S: remove ugly debug
+static void DebugPrintFunction(const char* functionName)
+{
+	if (false)
+	{
+		trace("1S_DBG_IDMGR: %s\n", functionName);
+	}
+}
+
 static std::list<int> g_objectIds;
 static std::set<int> g_usedObjectIds;
 static std::set<int> g_stolenObjectIds;
@@ -20,6 +29,8 @@ static uint32_t(*g_origAssignObjectId)(void*);
 
 static uint32_t AssignObjectId(void* objectIds)
 {
+	DebugPrintFunction(__FUNCTION__);
+
 	if (!Instance<ICoreGameInit>::Get()->OneSyncEnabled)
 	{
 		return g_origAssignObjectId(objectIds);
@@ -47,6 +58,8 @@ static bool(*g_origReturnObjectId)(void*, uint16_t);
 
 static bool ReturnObjectId(void* objectIds, uint16_t objectId)
 {
+	DebugPrintFunction(__FUNCTION__);
+
 	if (!Instance<ICoreGameInit>::Get()->OneSyncEnabled)
 	{
 		return g_origReturnObjectId(objectIds, objectId);
@@ -78,6 +91,7 @@ static bool ReturnObjectId(void* objectIds, uint16_t objectId)
 
 void ObjectIds_ReturnObjectId(uint16_t objectId)
 {
+	DebugPrintFunction(__FUNCTION__);
 	ReturnObjectId(nullptr, objectId);
 }
 
@@ -85,6 +99,8 @@ static bool(*g_origHasSpaceForObjectId)(void*, int, bool);
 
 static bool HasSpaceForObjectId(void* objectIds, int num, bool unkScript)
 {
+	DebugPrintFunction(__FUNCTION__);
+
 	if (!Instance<ICoreGameInit>::Get()->OneSyncEnabled)
 	{
 		return g_origHasSpaceForObjectId(objectIds, num, unkScript);
@@ -95,6 +111,8 @@ static bool HasSpaceForObjectId(void* objectIds, int num, bool unkScript)
 
 void ObjectIds_AddObjectId(int objectId)
 {
+	DebugPrintFunction(__FUNCTION__);
+
 	// track 'stolen' migration object IDs so we can return them to the server once they get deleted
 	bool wasOurs = false;
 
@@ -123,6 +141,7 @@ void ObjectIds_AddObjectId(int objectId)
 
 void ObjectIds_ConfirmObjectId(int objectId)
 {
+	DebugPrintFunction(__FUNCTION__);
 	TheClones->Log("%s: id %d\n", __func__, objectId);
 
 	g_objectIds.push_back(objectId);
@@ -130,6 +149,7 @@ void ObjectIds_ConfirmObjectId(int objectId)
 
 void ObjectIds_StealObjectId(int objectId)
 {
+	DebugPrintFunction(__FUNCTION__);
 	TheClones->Log("%s: id %d\n", __func__, objectId);
 
 	if (g_usedObjectIds.find(objectId) != g_usedObjectIds.end())
@@ -152,6 +172,7 @@ void ObjectIds_StealObjectId(int objectId)
 
 void ObjectIds_RemoveObjectId(int objectId)
 {
+	DebugPrintFunction(__FUNCTION__);
 	// this is no longer ours
 	g_usedObjectIds.erase(objectId);
 
@@ -244,8 +265,17 @@ static HookFunction hookFunction([]()
 	});
 
 	MH_Initialize();
+
+
+#ifdef GTA_FIVE
 	MH_CreateHook(hook::get_pattern("FF 89 C4 3E 00 00 33 D2", -12), AssignObjectId, (void**)&g_origAssignObjectId);
 	MH_CreateHook(hook::get_pattern("44 8B 91 C4 3E 00 00", -0x14), ReturnObjectId, (void**)&g_origReturnObjectId);
 	MH_CreateHook(hook::get_pattern("48 83 EC 20 8B B1 C4 3E 00 00", -0xB), HasSpaceForObjectId, (void**)&g_origHasSpaceForObjectId);
+#elif IS_RDR3
+	MH_CreateHook(hook::get_pattern("0F B7 08 66 FF C9 66 3B CA 76", -0x1C), AssignObjectId, (void**)&g_origAssignObjectId);
+	MH_CreateHook(hook::get_pattern("45 8B D9 85 DB 7E ? 8B B9", -0x1A), ReturnObjectId, (void**)&g_origReturnObjectId);
+	MH_CreateHook(hook::get_pattern("48 83 EC 20 8B B9 ? ? ? ? 8B DA", -0x6), HasSpaceForObjectId, (void**)&g_origHasSpaceForObjectId);
+#endif
+
 	MH_EnableHook(MH_ALL_HOOKS);
 });

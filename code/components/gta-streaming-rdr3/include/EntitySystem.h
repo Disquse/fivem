@@ -1,10 +1,15 @@
 #pragma once
 
+#include <directxmath.h>
+
 #ifdef COMPILING_GTA_STREAMING_RDR3
 #define STREAMING_EXPORT DLL_EXPORT
 #else
 #define STREAMING_EXPORT DLL_IMPORT
 #endif
+
+using Vector3 = DirectX::XMFLOAT3;
+using Matrix4x4 = DirectX::XMFLOAT4X4;
 
 class fwEntity;
 

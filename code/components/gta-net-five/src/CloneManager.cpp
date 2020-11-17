@@ -1,4 +1,5 @@
 #include "StdInc.h"
+
 #include <CloneManager.h>
 
 #include <state/RlMessageBuffer.h>
@@ -62,7 +63,11 @@ static ICoreGameInit* icgi;
 
 static hook::cdecl_stub<uint32_t()> _getNetAckTimestamp([]()
 {
+#ifdef GTA_FIVE
 	return hook::get_pattern("3B CA 76 02 FF", -0x31);
+#elif IS_RDR3
+	return hook::get_pattern("8B C3 2B 05 ? ? ? ? 39 ? ? ? ? 02 76 ? FF C8", -0x30);
+#endif
 });
 
 extern CNetGamePlayer* g_players[256];
@@ -491,7 +496,11 @@ void CloneManagerLocal::ProcessCreateAck(uint16_t objId, uint16_t uniqifier)
 
 static hook::cdecl_stub<void(rage::netSyncTree*, rage::netObject*, uint8_t, uint16_t, uint32_t, int)> _processAck([]()
 {
+#ifdef GTA_FIVE
 	return hook::get_pattern("45 32 ED FF 50 20 8B CB 41", -0x34);
+#elif IS_RDR3
+	return hook::get_pattern("44 8B F7 FF 50 ? 48 8B C8 8B D7 E8", -0x4B);
+#endif
 });
 
 void CloneManagerLocal::ProcessSyncAck(uint16_t objId, uint16_t uniqifier)
@@ -1870,11 +1879,17 @@ float* (*getCoordsFromOrigin)(void*, float*);
 
 static HookFunction hookFunctionOrigin([]()
 {
+#ifdef GTA_FIVE
 	auto loc = hook::get_call(hook::get_pattern<char>("C6 45 0B 80 89 5D 0F", 0x1B));
+#elif IS_RDR3
+	auto loc = hook::get_call(hook::get_pattern<char>("45 33 C0 48 89 ? ? ? ? 04 33 D2 48 8D 0D", -0x5));
+#endif
+
 	origin = hook::get_address<void*>(loc + 0xC);
 	hook::set_call(&getCoordsFromOrigin, loc + 0x10);
 });
 
+#ifdef GTA_FIVE
 static void (*fwSceneUpdate__AddToSceneUpdate)(void*, uint32_t);
 static void (*fwSceneUpdate__RemoveFromSceneUpdate)(void*, uint32_t, bool);
 
@@ -1907,6 +1922,7 @@ static HookFunction hookFunctionSceneUpdateWorkaround([]()
 	MH_CreateHook(hook::get_pattern("F7 D3 21 58 10 0F", -0x3F), fwSceneUpdate__RemoveFromSceneUpdate_Track, (void**)&fwSceneUpdate__RemoveFromSceneUpdate);
 	MH_EnableHook(MH_ALL_HOOKS);
 });
+#endif
 
 void CloneManagerLocal::Update()
 {
@@ -1919,19 +1935,29 @@ void CloneManagerLocal::Update()
 		SendUpdates(m_ackBuffer, HashString("netAcks"));
 	}
 
+#ifdef GTA_FIVE
 	alignas(16) float centerOfWorld[4];
 	getCoordsFromOrigin(origin, centerOfWorld);
 
 	auto origin = DirectX::XMVectorSet(centerOfWorld[0], centerOfWorld[1], centerOfWorld[2], 1.0f);
 	static uint32_t frameCount = 0;
+#endif
 
 	// run Update() on all clones
 	for (auto& clone : m_savedEntities)
 	{
 		if (clone.second)
 		{
+#ifdef GTA_FIVE
 			clone.second->Update();
+#elif IS_RDR3
+			// REDM1S: figure out weird vtable order
+			//clone.second->MainThreadUpdate();
+			//clone.second->DependencyThreadUpdate();
+			//clone.second->PostDependencyThreadUpdate();
+#endif
 
+#ifdef GTA_FIVE
 			if (clone.second->GetGameObject())
 			{
 				if (clone.second->syncData.isRemote)
@@ -1982,10 +2008,13 @@ void CloneManagerLocal::Update()
 
 				clone.second->UpdatePendingVisibilityChanges();
 			}
+#endif
 		}
 	}
 
+#ifdef GTA_FIVE
 	frameCount++;
+#endif
 }
 
 bool CloneManagerLocal::RegisterNetworkObject(rage::netObject* object)
@@ -2082,22 +2111,38 @@ void CloneManagerLocal::ChangeOwner(rage::netObject* object, CNetGamePlayer* pla
 
 static hook::cdecl_stub<bool(const Vector3* position, float radius)> _isSphereVisibleForLocalPlayer([]()
 {
+#ifdef GTA_FIVE
 	return hook::get_pattern("48 85 C9 74 2B F3 0F 10 58 08", -0x12);
+#elif IS_RDR3
+	return hook::get_pattern("48 85 C9 74 ? 0F 10 08 48 83", -0x15);
+#endif
 });
 
 static hook::cdecl_stub<bool(const Vector3* position, float radius, float maxDistance, CNetGamePlayer** firstPlayer)> _isSphereVisibleForAnyRemotePlayer([]()
 {
+#ifdef GTA_FIVE
 	return hook::get_call(hook::get_pattern("0F 29 4C 24 30 0F 28 C8 E8", 8));
+#elif IS_RDR3
+	return hook::get_call(hook::get_pattern("0F 14 D3 0F 29 54 24 ? 0F 28 D5 E8", 11));
+#endif
 });
 
 static hook::cdecl_stub<void(rage::netObjectMgr*, rage::netObject*)> _processRemoveAck([]()
 {
+#ifdef GTA_FIVE
 	return hook::get_pattern("39 42 74 75 12 39 42 70 75 0D", -0x11);
+#elif IS_RDR3
+	return hook::get_pattern("74 ? F6 42 48 01 74 ? 45 8B C2 48", -0xD);
+#endif
 });
 
 static hook::thiscall_stub<bool(void*)> fwEntity_IsInScene([]()
 {
+#ifdef GTA_FIVE
 	return hook::get_pattern("74 12 F6 41 40 01 75 0A 48", -5);
+#elif IS_RDR3
+	return hook::get_pattern("33 D2 48 85 C9 74 14");
+#endif
 });
 
 void CloneManagerLocal::WriteUpdates()
@@ -2248,6 +2293,8 @@ void CloneManagerLocal::WriteUpdates()
 		// get latency stuff
 		auto syncLatency = 50ms;
 
+		// REDM1S: implement it
+#ifdef GTA_FIVE
 		if (object->GetGameObject())
 		{
 			auto entity = (fwEntity*)object->GetGameObject();
@@ -2258,12 +2305,15 @@ void CloneManagerLocal::WriteUpdates()
 				syncLatency = 250ms;
 			}
 		}
+#endif
 
 		// players get instant sync
 		if (object->objectType == (uint16_t)NetObjEntityType::Player)
 		{
 			syncLatency = 0ms;
 		}
+
+#ifdef GTA_FIVE
 		// player-occupied vehicles do as well
 		else if (object->GetGameObject() && ((fwEntity*)object->GetGameObject())->IsOfType(HashString("CVehicle")))
 		{
@@ -2286,6 +2336,7 @@ void CloneManagerLocal::WriteUpdates()
 				}
 			}
 		}
+#endif
 
 		syncLatency = std::max(syncLatency, 10ms);
 

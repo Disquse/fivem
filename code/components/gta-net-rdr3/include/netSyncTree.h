@@ -2,22 +2,40 @@
 
 enum class NetObjEntityType
 {
-	Automobile = 0,
-	Bike = 1,
-	Boat = 2,
-	Door = 3,
-	Heli = 4,
-	Object = 5,
-	Ped = 6,
-	Pickup = 7,
-	PickupPlacement = 8,
-	Plane = 9,
-	Submarine = 10,
-	Player = 11,
-	Trailer = 12,
-	Train = 13,
-	Max = 14
+	Animal = 0,
+	Automobile = 1,
+	Bike = 2,
+	Boat = 3,
+	Door = 4,
+	Heli = 5,
+	Object = 6,
+	Ped = 7,
+	Pickup = 8,
+	PickupPlacement = 9,
+	Plane = 10,
+	Submarine = 11,
+	Player = 12,
+	Trailer = 13,
+	Train = 14,
+	DraftVeh = 15,
+	StatsTracker = 16,
+	PropSet = 17,
+	AnimScene = 18,
+	GroupScenario = 19,
+	Herd = 20,
+	Horse = 21,
+	WorldState = 22,
+	WorldProjectile = 23,
+	Incident = 24,
+	Guardzone = 25,
+	PedGroup = 26,
+	CombatDirector = 27,
+	PedSharedTargeting = 28,
+	Persistent = 29,
+	Max = 30,
 };
+
+const char* GetNetObjEntityName(uint16_t type);
 
 namespace rage
 {
@@ -30,7 +48,11 @@ class netSyncTree
 public:
 	virtual ~netSyncTree() = 0;
 
-	virtual void WriteTree(int flags, int objFlags, netObject* object, datBitBuffer* buffer, uint32_t time, void* logger, uint8_t targetPlayer, void* outNull) = 0;
+	virtual void* InitialiseTree() = 0;
+
+	virtual void Write(int flags, int objFlags, netObject* object, datBitBuffer* buffer, uint32_t time, void* logger, uint8_t targetPlayer, void* outNull) = 0;
+
+	virtual void m_10() = 0;
 
 	virtual void ApplyToObject(netObject* object, void*) = 0;
 
@@ -76,11 +98,11 @@ public:
 
 	virtual void m_B8() = 0;
 
-	virtual void m_C0() = 0;
+	virtual bool m_C0(int) = 0;
 
 	virtual void m_C8() = 0;
 
-	virtual bool m_D0(int) = 0;
+	virtual void m_D0() = 0;
 
 	virtual void m_D8() = 0;
 
@@ -102,9 +124,9 @@ public:
 	static netSyncTree* GetForType(NetObjEntityType type);
 
 private:
-	char pad[8]; // +8
+	char pad[168]; // +8
 
 public:
-	rage::netSyncNodeBase* syncNode; // +16
+	rage::netSyncNodeBase* syncNode; // +176
 };
 }

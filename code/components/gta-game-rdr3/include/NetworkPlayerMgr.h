@@ -35,7 +35,7 @@ namespace rage
 	public:
 		virtual ~netPlayer() = 0;
 
-		virtual void Init(rage::netNatType natType) = 0;
+		virtual void Reset() = 0;
 
 		virtual void Init(rage::rlRosPlayerAccountId const& accountId, uint32_t, rage::netNatType natType) = 0;
 
@@ -58,6 +58,12 @@ namespace rage
 		virtual void m_unk2() = 0;
 
 		virtual rlGamerInfo* GetGamerInfo() = 0;
+
+	public:
+		const char* GetName()
+		{
+			return GetGamerInfo()->name;
+		}
 	};
 }
 
@@ -66,9 +72,11 @@ class CNetGamePlayer : public rage::netPlayer
 private:
 	struct Impl
 	{
-		uint8_t pad[16];
-		uint8_t activePlayerIndex;
-		uint8_t physicalPlayerIndex;
+		uint8_t pad[16]; // +8
+		uint8_t activePlayerIndex; // +24
+		uint8_t physicalPlayerIndex; // +25
+		char pad2[278]; // +26;
+		void* playerInfo; // +304
 	};
 
 	union
@@ -79,6 +87,7 @@ private:
 public:
 	DECLARE_ACCESSOR(activePlayerIndex);
 	DECLARE_ACCESSOR(physicalPlayerIndex);
+	DECLARE_ACCESSOR(playerInfo);
 };
 
 class CNetworkPlayerMgr

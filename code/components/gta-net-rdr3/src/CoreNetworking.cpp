@@ -182,9 +182,19 @@ static hook::cdecl_stub<bool()> isNetworkHost([]()
 	return hook::get_pattern("33 DB 38 1D ? ? ? ? 75 1B 38 1D", -6);
 });
 
+void ObjectIds_BindNetLibrary(NetLibrary*);
+
+#include <CloneManager.h>
+
 static HookFunction initFunction([]()
 {
 	g_netLibrary = NetLibrary::Create();
+
+	Instance<NetLibrary>::Set(g_netLibrary);
+
+	TheClones->BindNetLibrary(g_netLibrary);
+
+	ObjectIds_BindNetLibrary(g_netLibrary);
 
 	g_netLibrary->OnBuildMessage.Connect([](const std::function<void(uint32_t, const char*, int)>& writeReliable)
 	{
