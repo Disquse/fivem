@@ -166,24 +166,13 @@ static void JoinPhysicalPlayerOnHost(void* bubbleMgr, CNetGamePlayer* player)
 	// don't add to g_playerListRemote(!)
 }
 #elif IS_RDR3
-static void*(*g_origSetPhysicalPlayerIndex)(void* netPlayer, void* playerMgr, void* playerDataMsg, uint8_t slotIndex);
+static void*(*g_origJoinBubble)(void* bubbleMgr, void* scSessionImpl, void* playerDataMsg, void* a4, uint8_t slotIndex);
 
-static void* SetPhysicalPlayerIndex(void* netPlayer, void* playerMgr, void* playerDataMsg, uint8_t slotIndex)
+static void* JoinPhysicalPlayerOnHost(void* bubbleMgr, void* scSessionImpl, void* playerDataMsg, void* a4, uint8_t slotIndex)
 {
-	trace("SetPhysicalPlayerIndex %d\n", slotIndex);
-	return g_origSetPhysicalPlayerIndex(netPlayer, playerMgr, playerDataMsg, slotIndex);
-}
-
-static void*(*g_origJoinBubble)(void* bubbleMgr, void* scSessionImpl, void* playerDataMsg, void* a4, void* a5, uint8_t slotIndex);
-
-static void* JoinPhysicalPlayerOnHost(void* bubbleMgr, void* scSessionImpl, void* playerDataMsg, void* a4, void* a5, uint8_t slotIndex)
-{
-	DebugPrintFunction(__FUNCTION__);
-	trace("JoinPhysicalPlayerOnHost %d %d %d %d %d %d\n", (uint64_t)bubbleMgr, (uint64_t)scSessionImpl, (uint64_t)playerDataMsg, (uint64_t)a4, (uint64_t)a5, slotIndex);
-
 	if (!icgi->OneSyncEnabled)
 	{
-		return g_origJoinBubble(bubbleMgr, scSessionImpl, playerDataMsg, a4, a5, slotIndex);
+		return g_origJoinBubble(bubbleMgr, scSessionImpl, playerDataMsg, a4, slotIndex);
 	}
 
 	console::DPrintf("onesync", "Assigning physical player index for the local player.\n");
@@ -191,9 +180,10 @@ static void* JoinPhysicalPlayerOnHost(void* bubbleMgr, void* scSessionImpl, void
 	auto clientId = g_netLibrary->GetServerNetID();
 	auto idx = g_netLibrary->GetServerSlotID();
 
-	auto result = g_origJoinBubble(bubbleMgr, scSessionImpl, playerDataMsg, a4, a5, idx);
+	auto result = g_origJoinBubble(bubbleMgr, scSessionImpl, playerDataMsg, a4, idx);
 
 	auto player = g_playerMgr->localPlayer;
+	player->physicalPlayerIndex() = idx;
 
 	g_players[idx] = player;
 
@@ -207,7 +197,6 @@ static void* JoinPhysicalPlayerOnHost(void* bubbleMgr, void* scSessionImpl, void
 	g_playerBags[clientId] = Instance<fx::ResourceManager>::Get()
 		->GetComponent<fx::StateBagComponent>()
 		->RegisterStateBag(fmt::sprintf("player:%d", clientId));
-
 
 	// don't add to g_playerListRemote(!)
 
