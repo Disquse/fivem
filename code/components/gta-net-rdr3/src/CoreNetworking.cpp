@@ -672,6 +672,8 @@ struct LoggedInt
 	int value;
 };
 
+bool IsWaitingForTimeSync();
+
 static HookFunction hookFunction([]()
 {
 	static ConsoleCommand quitCommand("quit", [](const std::string& message)
@@ -749,6 +751,8 @@ static HookFunction hookFunction([]()
 		gameLoaded = true;
 	});
 
+	static ICoreGameInit* cgi = Instance<ICoreGameInit>::Get();
+
 	OnKillNetwork.Connect([](const char*)
 	{
 		gameLoaded = false;
@@ -822,6 +826,14 @@ static HookFunction hookFunction([]()
 			break;
 
 		case 5:
+			if (cgi->OneSyncEnabled)
+			{
+				if (IsWaitingForTimeSync())
+				{
+					return;
+				}
+			}
+
 			static char sessionIdPtr[48];
 			memset(sessionIdPtr, 0, sizeof(sessionIdPtr));
 			joinOrHost(1, nullptr, sessionIdPtr);

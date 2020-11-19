@@ -2787,7 +2787,7 @@ static hook::cdecl_stub<void*()> _getConnectionManager([]()
 #endif
 });
 
-// REDM1S: time stuff wasn't changed since V
+#ifdef GTA_FIVE
 static bool (*g_origInitializeTime)(void* timeSync, void* connectionMgr, int flags, void* trustHost,
 uint32_t sessionSeed, int* deltaStart, int packetFlags, int initialBackoff, int maxBackoff);
 
@@ -3015,16 +3015,198 @@ bool netTimeSync__InitializeTimeStub(netTimeSync<Build>* timeSync, void* connect
 
 	return true;
 }
+#elif IS_RDR3
+static bool (*g_origInitializeTime)(void* timeSync, void* connectionMgr, int flags, void* trustHost,
+	uint32_t sessionSeed, int* deltaStart, int packetFlags, int initialBackoff, int maxBackoff);
 
-#ifdef IS_RDR3
-static bool(*g_origHasConnectionMgr)(void* timeSync);
+static bool g_initedTimeSync;
 
-static bool netTimeSync__HasConnectionMgr(void* timeSync)
+class netTimeSync
 {
-	if (!icgi->OneSyncEnabled || !g_initedTimeSync)
+public:
+	void Update()
 	{
-		return g_origHasConnectionMgr(timeSync);
+		if (!icgi->OneSyncEnabled)
+		{
+			return;
+		}
+
+		if (/*m_connectionMgr /*&& m_flags & 2 && */ !m_disabled)
+		{
+			uint32_t curTime = timeGetTime();
+
+			if (!m_nextSync || int32_t(timeGetTime() - m_nextSync) >= 0)
+			{
+				m_requestSequence++;
+
+				net::Buffer outBuffer;
+				outBuffer.Write<uint32_t>(curTime); // request time
+				outBuffer.Write<uint32_t>(m_requestSequence); // request sequence
+
+				g_netLibrary->SendReliableCommand("msgTimeSyncReq", (const char*)outBuffer.GetData().data(), outBuffer.GetCurOffset());
+
+				m_nextSync = (curTime + m_effectiveTimeBetweenSyncs) | 1;
+			}
+		}
 	}
+
+	void HandleTimeSync(net::Buffer& buffer)
+	{
+		auto reqTime = buffer.Read<uint32_t>();
+		auto reqSequence = buffer.Read<uint32_t>();
+		auto resDelta = buffer.Read<uint32_t>();
+
+		if (m_disabled)
+		{
+			return;
+		}
+
+		/*if (!(m_flags & 2))
+		{
+			return;
+		}*/
+
+		// out of order?
+		if (int32_t(reqSequence - m_replySequence) <= 0)
+		{
+			return;
+		}
+
+		auto rtt = timeGetTime() - reqTime;
+
+		// bad timestamp, negative time passed
+		if (int32_t(rtt) <= 0)
+		{
+			return;
+		}
+
+		int32_t timeDelta = resDelta + (rtt / 2) - timeGetTime();
+
+		// is this a low RTT, or did we retry often enough?
+		if (rtt <= 300 || m_retryCount >= 10)
+		{
+			if (!m_lastRtt)
+			{
+				m_lastRtt = rtt;
+			}
+
+			// is RTT within variance, low, or retried?
+			if (rtt <= 100 || (rtt / m_lastRtt) < 2 || m_retryCount >= 10)
+			{
+				m_timeDelta = timeDelta;
+				m_replySequence = reqSequence;
+
+				// progressive backoff once we've established a valid time base
+				if (m_effectiveTimeBetweenSyncs < m_configMaxBackoff)
+				{
+					m_effectiveTimeBetweenSyncs = std::min(m_configMaxBackoff, m_effectiveTimeBetweenSyncs * 2);
+				}
+
+				m_retryCount = 0;
+
+				// use flag 4 to reset time at least once, even if game session code has done so to a higher value
+				if (!(m_applyFlags & 4))
+				{
+					m_lastTime = m_timeDelta + timeGetTime();
+				}
+
+				m_applyFlags |= 7;
+			}
+			else
+			{
+				m_nextSync = 0;
+				m_retryCount++;
+			}
+
+			// update average RTT
+			m_lastRtt = (rtt + m_lastRtt) / 2;
+		}
+		else
+		{
+			m_nextSync = 0;
+			m_retryCount++;
+		}
+	}
+
+	bool IsInitialized()
+	{
+		if (!g_initedTimeSync)
+		{
+			g_origInitializeTime(this, _getConnectionManager(), 1, nullptr, 0, nullptr, 7, 2000, 60000);
+
+			// to make the game not try to get time from us
+			m_connectionMgr = nullptr;
+
+			// we don't want to use cloud time
+			m_useCloudTime = false;
+
+			g_initedTimeSync = true;
+
+			return false;
+		}
+
+		return (m_applyFlags & 4) != 0;
+	}
+
+	inline void SetConnectionManager(void* mgr)
+	{
+		m_connectionMgr = mgr;
+	}
+
+public:
+	void* m_vtbl; // +0
+	void* m_connectionMgr; // +8
+	uint32_t m_unkTrust; // +16
+	uint32_t m_sessionKey; // +20
+	char m_pad_24[48]; // +24
+	uint32_t m_nextSync; // +72
+	uint32_t m_configTimeBetweenSyncs; // +76
+	uint32_t m_configMaxBackoff; // +80, usually 60000
+	uint32_t m_effectiveTimeBetweenSyncs; // +84
+	uint32_t m_lastRtt; // +88
+	uint32_t m_retryCount; // +92
+	uint32_t m_requestSequence; // +96
+	uint32_t m_replySequence; // +100
+	uint32_t m_flags; // +104
+	uint32_t m_packetFlags; // +108
+	int32_t m_timeDelta; // +112
+	char m_pad_116[28];
+	uint32_t m_lastTime; // +144, used to prevent time from going backwards
+	uint8_t m_applyFlags; // +148
+	uint8_t m_unk5; // +149
+	uint8_t m_disabled; // +150
+	uint8_t m_useCloudTime; // +151
+};
+
+static netTimeSync** g_netTimeSync;
+
+bool IsWaitingForTimeSync()
+{
+	return !(*g_netTimeSync)->IsInitialized();
+}
+
+static InitFunction initFunctionTime([]()
+{
+	NetLibrary::OnNetLibraryCreate.Connect([](NetLibrary* lib)
+	{
+		lib->AddReliableHandler("msgTimeSync", [](const char* data, size_t len)
+		{
+			net::Buffer buf(reinterpret_cast<const uint8_t*>(data), len);
+
+			(*g_netTimeSync)->HandleTimeSync(buf);
+		});
+	});
+});
+
+bool netTimeSync__InitializeTimeStub(netTimeSync* timeSync, void* connectionMgr, int flags, void* trustHost,
+	uint32_t sessionSeed, int* deltaStart, int packetFlags, int initialBackoff, int maxBackoff)
+{
+	if (!icgi->OneSyncEnabled)
+	{
+		return g_origInitializeTime(timeSync, connectionMgr, flags, trustHost, sessionSeed, deltaStart, packetFlags, initialBackoff, maxBackoff);
+	}
+
+	timeSync->SetConnectionManager(connectionMgr);
 
 	return true;
 }
@@ -3032,17 +3214,13 @@ static bool netTimeSync__HasConnectionMgr(void* timeSync)
 
 static HookFunction hookFunctionTime([]()
 {
-	void* func = (xbr::IsGameBuildOrGreater<2060>()) ? (void*)&netTimeSync__InitializeTimeStub<2060> : &netTimeSync__InitializeTimeStub<1604>;
-
 	MH_Initialize();
 
 #ifdef GTA_FIVE
+	void* func = (xbr::IsGameBuildOrGreater<2060>()) ? (void*)&netTimeSync__InitializeTimeStub<2060> : &netTimeSync__InitializeTimeStub<1604>;
 	MH_CreateHook(hook::get_pattern("48 8B D9 48 39 79 08 0F 85 ? ? 00 00 41 8B E8", -32), func, (void**)&g_origInitializeTime);
 #elif IS_RDR3
-	MH_CreateHook(hook::get_pattern("48 89 51 08 41 83 F8 02 44 0F 45 C8", -49), func, (void**)&g_origInitializeTime);
-
-	// unknown hardcoded check
-	// MH_CreateHook(hook::get_call(hook::get_pattern("45 33 C0 44 8B C8 48 8B CB 41 8D 50 02 E8", -24)), netTimeSync__HasConnectionMgr, (void**)&g_origHasConnectionMgr);
+	MH_CreateHook(hook::get_pattern("48 89 51 08 41 83 F8 02 44 0F 45 C8", -49), netTimeSync__InitializeTimeStub, (void**)&g_origInitializeTime);
 #endif
 
 	MH_EnableHook(MH_ALL_HOOKS);
@@ -3057,11 +3235,12 @@ static HookFunction hookFunctionTime([]()
 		g_netTimeSync<1604> = hook::get_address<netTimeSync<1604>**>(hook::get_pattern("EB 16 48 8B 0D ? ? ? ? 45 33 C9 45 33 C0", 5));
 	}
 #elif IS_RDR3
-	g_netTimeSync<1604> = hook::get_address<netTimeSync<1604>**>(hook::get_pattern("4C 8D 45 50 41 03 C7 44 89 6D 50 89", -4));
+	g_netTimeSync = hook::get_address<netTimeSync**>(hook::get_pattern("4C 8D 45 50 41 03 C7 44 89 6D 50 89", -4));
 #endif
 
 	OnMainGameFrame.Connect([]()
 	{
+#if GTA_FIVE
 		if (xbr::IsGameBuildOrGreater<2060>())
 		{
 			(*g_netTimeSync<2060>)->Update();
@@ -3070,6 +3249,9 @@ static HookFunction hookFunctionTime([]()
 		{
 			(*g_netTimeSync<1604>)->Update();
 		}
+#elif IS_RDR3
+		(*g_netTimeSync)->Update();
+#endif
 	});
 });
 
@@ -3707,9 +3889,10 @@ static HookFunction hookFunctionNative([]()
 	rage__s_NetworkTimeThisFrameStart = hook::get_address<uint32_t*>(hook::get_pattern("49 8B 0F 40 8A D6 41 2B C4 44 3B 25", 12));
 	rage__s_NetworkTimeLastFrameStart = hook::get_address<uint32_t*>(hook::get_pattern("89 05 ? ? ? ? 48 8B 01 FF 50 10 80 3D", 2));
 #elif IS_RDR3
-	auto location = hook::get_pattern<char>("84 C0 74 ? 8B 05 ? ? ? ? 48 8B 0D ? ? ? ? 89");
-	rage__s_NetworkTimeThisFrameStart = hook::get_address<uint32_t*>(location + 6);
-	rage__s_NetworkTimeLastFrameStart = hook::get_address<uint32_t*>(location + 18);
+	// REDM1S: patternify, this pattern/offsets are invalid for some reason
+	// auto location = hook::get_pattern<char>("84 C0 74 ? 8B 05 ? ? ? ? 48 8B 0D ? ? ? ? 89");
+	rage__s_NetworkTimeThisFrameStart = (uint32_t*)0x145A6BC54; // hook::get_address<uint32_t*>(location + 6);
+	rage__s_NetworkTimeLastFrameStart = (uint32_t*)0x145A6BC50; // hook::get_address<uint32_t*>(location + 18);
 #endif
 });
 
