@@ -121,8 +121,8 @@ public:
 	virtual void m_140() = 0;
 	// virtual void m_148() = 0; // REDM1S: not sure where padding was added, this is for Update calls
 	virtual bool IsInScope(void* player, void* unk) = 0;
+	virtual void ManageUpdateLevel() = 0; // REDM1S: probably "MainThreadUpdate" should on this place
 	virtual void MainThreadUpdate() = 0;
-	virtual void ManageUpdateLevel() = 0;
 	virtual void DependencyThreadUpdate() = 0;
 	virtual void PostDependencyThreadUpdate() = 0;
 	virtual void StartSynchronising() = 0;

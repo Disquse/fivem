@@ -1952,9 +1952,9 @@ void CloneManagerLocal::Update()
 			clone.second->Update();
 #elif IS_RDR3
 			// REDM1S: figure out weird vtable order
-			//clone.second->MainThreadUpdate();
-			//clone.second->DependencyThreadUpdate();
-			//clone.second->PostDependencyThreadUpdate();
+			clone.second->MainThreadUpdate();
+			clone.second->DependencyThreadUpdate();
+			clone.second->PostDependencyThreadUpdate();
 #endif
 
 #ifdef GTA_FIVE
