@@ -59,12 +59,17 @@ public:
 	}
 };
 
+// REDM1S: CNetworkSyncDataULBase was changed in RDR3, probably was moved to +16, but objectType and objectId changed
 class netObject
 {
 public:
 	char pad[56]; // +8
 	uint16_t objectType; // +64
 	uint16_t objectId; // +66
+	char pad_2[1]; // +68
+	uint8_t ownerId; // +69
+	uint8_t nextOwnerId;
+	uint8_t isRemote;
 	CNetworkSyncDataULBase syncData; // +68
 
 	inline netBlender* GetBlender()
@@ -76,8 +81,8 @@ public:
 	virtual void m_8() = 0;
 	virtual void m_10() = 0;
 	virtual void m_18() = 0;
-	virtual void* m_20() = 0;
 	virtual void m_28() = 0;
+	virtual void* m_20() = 0; // GetSyncData
 	virtual netSyncTree* GetSyncTree() = 0;
 	virtual bool HasGameObject() = 0;
 	virtual void m_40() = 0;
@@ -153,6 +158,38 @@ public:
 	virtual void DisplayNetworkInfo() = 0;
 	virtual int GetNumPlayersToUpdatePerBatch() = 0; // 80
 	virtual void LogScopeReason(bool toggle, void* player, void* unk) = 0;
+
+	// REDM1S: find a better compatibility layer
+
+	inline uint8_t GetOwnerId()
+	{
+		return ownerId;
+	}
+
+	inline void SetOwnerId(uint8_t value)
+	{
+		ownerId = value;
+	}
+
+	inline uint8_t GetNextOwnerId()
+	{
+		return nextOwnerId;
+	}
+
+	inline void SetNextOwnerId(uint8_t value)
+	{
+		nextOwnerId = value;
+	}
+
+	inline uint8_t GetIsRemote()
+	{
+		return isRemote;
+	}
+
+	inline void SetIsRemote(bool value)
+	{
+		isRemote = value;
+	}
 
 	inline std::string ToString()
 	{

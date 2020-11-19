@@ -1069,8 +1069,8 @@ void RenderNetObjectDetail(rage::netObject* netObject)
 {
 	ImGui::Text("Object ID: %d", netObject->objectId);
 	ImGui::Text("Object type: %d", netObject->objectType);
-	ImGui::Text("Object owner: %d", netObject->syncData.ownerId);
-	ImGui::Text("Is remote: %s", netObject->syncData.isRemote ? "true" : "false");
+	ImGui::Text("Object owner: %d", netObject->GetOwnerId());
+	ImGui::Text("Is remote: %s", netObject->GetIsRemote() ? "true" : "false");
 	ImGui::Text("Game object: %s", netObject->GetGameObject() ? DescribeGameObject(netObject->GetGameObject()) : "NULL");
 
 	if (ImGui::Button("Force blend"))

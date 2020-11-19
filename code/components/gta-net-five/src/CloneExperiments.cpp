@@ -588,7 +588,7 @@ CNetGamePlayer* netObject__GetPlayerOwner(rage::netObject* object)
 		return g_origGetOwnerNetPlayer(object);
 	}
 
-	if (object && object->syncData.ownerId == 31)
+	if (object && object->GetOwnerId() == 31)
 	{
 		auto player = g_playersByNetId[TheClones->GetClientId(object)];
 
@@ -623,7 +623,7 @@ static CNetGamePlayer* netObject__GetPendingPlayerOwner(rage::netObject* object)
 		return g_origGetPendingPlayerOwner(object);
 	}
 
-	if (object->syncData.nextOwnerId != 0xFF)
+	if (object->GetNextOwnerId() != 0xFF)
 	{
 		auto player = g_playersByNetId[TheClones->GetPendingClientId(object)];
 
@@ -762,12 +762,12 @@ static void PassObjectControlStub(CNetGamePlayer* player, rage::netObject* netOb
 		return;
 	}
 
-	console::DPrintf("onesync", "passing object %016llx (%d) control from %d to %d\n", (uintptr_t)netObject, netObject->objectId, netObject->syncData.ownerId, player->physicalPlayerIndex());
-	TheClones->Log("%s: passing object %016llx (%d) control from %d to %d\n", __func__, (uintptr_t)netObject, netObject->objectId, netObject->syncData.ownerId, player->physicalPlayerIndex());
+	console::DPrintf("onesync", "passing object %016llx (%d) control from %d to %d\n", (uintptr_t)netObject, netObject->objectId, netObject->GetOwnerId(), player->physicalPlayerIndex());
+	TheClones->Log("%s: passing object %016llx (%d) control from %d to %d\n", __func__, (uintptr_t)netObject, netObject->objectId, netObject->GetOwnerId(), player->physicalPlayerIndex());
 
 	ObjectIds_RemoveObjectId(netObject->objectId);
 
-	netObject->syncData.nextOwnerId = 31;
+	netObject->SetNextOwnerId(31);
 	TheClones->SetTargetOwner(netObject, g_netIdsByPlayer[player]);
 
 	// REDM1S: implement
@@ -788,7 +788,7 @@ static void PassObjectControlStub(CNetGamePlayer* player, rage::netObject* netOb
 
 				if (netOccupant)
 				{
-					if (!netOccupant->syncData.isRemote && netOccupant->objectType != 11)
+					if (!netOccupant->GetIsRemote() && netOccupant->objectType != 11)
 					{
 						console::DPrintf("onesync", "passing occupant %d control as well\n", netOccupant->objectId);
 
@@ -843,11 +843,11 @@ static void SetOwnerStub(rage::netObject* netObject, CNetGamePlayer* newOwner)
 		return;
 	}
 
-	TheClones->Log("%s: passing object %016llx (%d) ownership from %d to %d\n", __func__, (uintptr_t)netObject, netObject->objectId, netObject->syncData.ownerId, newOwner->physicalPlayerIndex());
+	TheClones->Log("%s: passing object %016llx (%d) ownership from %d to %d\n", __func__, (uintptr_t)netObject, netObject->objectId, netObject->GetOwnerId(), newOwner->physicalPlayerIndex());
 
 	ObjectIds_RemoveObjectId(netObject->objectId);
 
-	netObject->syncData.nextOwnerId = 31;
+	netObject->SetNextOwnerId(31);
 	TheClones->SetTargetOwner(netObject, g_netIdsByPlayer[newOwner]);
 }
 
@@ -948,13 +948,13 @@ static void netObject__ClearPendingPlayerIndex(rage::netObject* object)
 {
 	if (icgi->OneSyncEnabled)
 	{
-		if (object->syncData.nextOwnerId == 31 && TheClones->GetPendingClientId(object) != 0xFFFF)
+		if (object->GetNextOwnerId() == 31 && TheClones->GetPendingClientId(object) != 0xFFFF)
 		{
 			return;
 		}
 	}
 
-	object->syncData.nextOwnerId = -1;
+	object->SetNextOwnerId(-1);
 }
 
 #ifdef GTA_FIVE
@@ -1052,7 +1052,7 @@ void ObjectManager_End(rage::netObjectMgr* objectMgr)
 				}
 
 				// don't force-delete the local player
-				if (object->objectType == (uint16_t)NetObjEntityType::Player && !object->syncData.isRemote)
+				if (object->objectType == (uint16_t)NetObjEntityType::Player && !object->GetIsRemote())
 				{
 					objectMgr->UnregisterNetworkObject(object, 0, true, false);
 					return;

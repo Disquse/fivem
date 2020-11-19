@@ -213,6 +213,36 @@ public:
 
 #undef FORWARD_FUNC
 
+	inline uint8_t GetOwnerId()
+	{
+		return syncData.ownerId;
+	}
+
+	inline void SetOwnerId(uint8_t value)
+	{
+		syncData.ownerId = value;
+	}
+
+	inline uint8_t GetNextOwnerId()
+	{
+		return syncData.nextOwnerId;
+	}
+
+	inline void SetNextOwnerId(uint8_t value)
+	{
+		syncData.nextOwnerId = value;
+	}
+
+	inline uint8_t GetIsRemote()
+	{
+		return syncData.isRemote;
+	}
+
+	inline void SetIsRemote(bool value)
+	{
+		syncData.isRemote = value;
+	}
+
 	inline std::string ToString()
 	{
 		return fmt::sprintf("[netObj:%d:%s]", objectId, GetTypeString());

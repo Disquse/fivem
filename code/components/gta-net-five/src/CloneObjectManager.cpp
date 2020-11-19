@@ -38,7 +38,7 @@ static void netObjectMgrBase__RegisterNetworkObject(rage::netObjectMgr* manager,
 		object->CreateNetBlender();
 	}
 
-	if (!object->syncData.isRemote)
+	if (!object->GetIsRemote())
 	{
 #ifdef GTA_FIVE
 		if (object->CanSynchronise(true))
@@ -71,7 +71,7 @@ static void netObjectMgrBase__DestroyNetworkObject(rage::netObjectMgr* manager, 
 	{
 		CloneObjectMgr->DestroyNetworkObject(object);
 
-		if (!object->syncData.isRemote && object->syncData.nextOwnerId == 0xFF)
+		if (!object->GetIsRemote() && object->GetNextOwnerId() == 0xFF)
 		{
 			ObjectIds_ReturnObjectId(object->objectId);
 		}
@@ -84,8 +84,6 @@ static void(*g_orig_netObjectMgrBase__ChangeOwner)(rage::netObjectMgr*, rage::ne
 
 static void netObjectMgrBase__ChangeOwner(rage::netObjectMgr* manager, rage::netObject* object, CNetGamePlayer* targetPlayer, int migrationType)
 {
-	DebugPrintFunction(__FUNCTION__);
-
 	if (!icgi->OneSyncEnabled)
 	{
 		return g_orig_netObjectMgrBase__ChangeOwner(manager, object, targetPlayer, migrationType);
@@ -101,8 +99,6 @@ static rage::netObject* (*g_orig_netObjectMgrBase__GetNetworkObject)(rage::netOb
 
 static rage::netObject* netObjectMgrBase__GetNetworkObject(rage::netObjectMgr* manager, uint16_t id, bool evenIfDeleting)
 {
-	DebugPrintFunction(__FUNCTION__);
-
 	if (!icgi->OneSyncEnabled)
 	{
 		return g_orig_netObjectMgrBase__GetNetworkObject(manager, id, evenIfDeleting);
@@ -124,8 +120,6 @@ static rage::netObject* (*g_orig_netObjectMgrBase__GetNetworkObjectForPlayer)(ra
 
 static rage::netObject* netObjectMgrBase__GetNetworkObjectForPlayer(rage::netObjectMgr* manager, uint16_t id, rage::netPlayer* player, bool evenIfDeleting)
 {
-	DebugPrintFunction(__FUNCTION__);
-
 	if (!icgi->OneSyncEnabled)
 	{
 		return g_orig_netObjectMgrBase__GetNetworkObjectForPlayer(manager, id, player, evenIfDeleting);
