@@ -2722,13 +2722,17 @@ static void SkipCopyIf1s(void* a1, void* a2, void* a3, void* a4, void* a5)
 static HookFunction hookFunction2([]()
 {
 	// 2 matches, 1st is data, 2nd is parent
-#ifdef GTA_FIVE
 	{
+#ifdef GTA_FIVE
 		auto location = hook::get_pattern<char>("48 89 44 24 20 E8 ? ? ? ? 84 C0 0F 95 C0 48 83 C4 58", -0x3C);
 		hook::set_call(&g_origWriteDataNode, location + 0x41);
+#elif IS_RDR3
+		auto location = hook::get_pattern<char>("49 89 43 C8 E8 ? ? ? ? 84 C0 0F 95 C0 48 83 C4 58", -0x3E);
+		hook::set_call(&g_origWriteDataNode, location + 0x42);
+#endif
+
 		hook::jump(location, WriteDataNodeStub);
 	}
-#endif
 
 	{
 		MH_Initialize();
@@ -2736,8 +2740,6 @@ static HookFunction hookFunction2([]()
 #ifdef GTA_FIVE
 		MH_CreateHook(hook::get_pattern("48 8B 03 48 8B D6 48 8B CB EB 06", -0x48), ReadDataNodeStub, (void**)&g_origReadDataNode);
 #elif IS_RDR3
-		// REDM1S: WriteDataNode was changed in RDR3 (heavily)
-		// MH_CreateHook(hook::get_pattern("49 8B 7E 18 89 44 24 38 4C 8B 11 41", -0x37), WriteDataNodeStub, (void**)&g_origWriteDataNode);
 		MH_CreateHook(hook::get_pattern("40 8A BC 43", -0x3D), ReadDataNodeStub, (void**)&g_origReadDataNode);
 #endif
 
