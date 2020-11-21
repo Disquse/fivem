@@ -262,15 +262,15 @@ static void RenderNetObjectTree()
 				{
 					try
 					{
-						std::string objectName = GetNetObjEntityName(object->objectType);
+						std::string objectName = GetNetObjEntityName(object->GetObjectType());
 
 						if (ImGui::TreeNodeEx(object,
 							ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ((g_curNetObjectSelection == object) ? ImGuiTreeNodeFlags_Selected : 0),
-							"%s - %d", objectName.c_str(), object->objectId))
+							"%s - %d", objectName.c_str(), object->GetObjectId()))
 						{
 							if (ImGui::IsItemClicked())
 							{
-								bool isDifferent = !g_curNetObjectSelection || g_curNetObjectSelection->objectType != object->objectType;
+								bool isDifferent = !g_curNetObjectSelection || g_curNetObjectSelection->GetObjectType() != object->GetObjectType();
 
 								g_curNetObjectSelection = object;
 
@@ -611,8 +611,7 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 			else
 			{
 				// compare last data for the node
-				auto nodeData = &g_syncData[state.object->objectId]->nodes[nodeIdx];
-
+				auto nodeData = &g_syncData[state.object->GetObjectId()].nodes[node];
 				uint32_t nodeSyncDelay = GetDelayForUpdateFrequency(node->GetUpdateFrequency(UpdateLevel::VERY_HIGH));
 
 				// throttle sends by waiting for the requested node delay
@@ -623,7 +622,7 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 					auto updateNode = [this, &state, &processedNodes, sizeLength](rage::netSyncDataNodeBase* dataNode, bool force) -> bool
 					{
 						size_t dataNodeIdx = GET_NIDX(this, dataNode);
-						auto nodeData = &g_syncData[state.object->objectId]->nodes[dataNodeIdx];
+						auto nodeData = &g_syncData[state.object->GetObjectId()].nodes[dataNode];
 
 						if (processedNodes.test(dataNodeIdx))
 						{
@@ -694,7 +693,7 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 							for (int child = 0; child < childCount; child++)
 							{
 								size_t childIdx = GET_NIDX(this, children[child]);
-								auto childData = &g_syncData[state.object->objectId]->nodes[childIdx];
+								auto childData = &g_syncData[state.object->GetObjectId()].nodes[children[child]];
 
 								written |= updateNode(children[child], nodeData->manuallyDirtied || childData->manuallyDirtied || written);
 							}
@@ -773,7 +772,7 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 
 				if (state.object)
 				{
-					g_netObjectNodeMapping[state.object->objectId][node] = { 1, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp() };
+					g_netObjectNodeMapping[state.object->GetObjectId()][node] = { 1, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp() };
 				}
 
 				uint32_t endPos = buffer->GetPosition();
@@ -869,9 +868,9 @@ void netSyncTree::AckCfx(netObject* object, uint32_t timestamp)
 		{
 			size_t nodeIdx = GET_NIDX(this, node);
 
-			if (state.time > g_syncData[state.object->objectId]->nodes[nodeIdx].lastAck)
+			if (state.time > g_syncData[state.object->GetObjectId()]->nodes[nodeIdx].lastAck)
 			{
-				g_syncData[state.object->objectId]->nodes[nodeIdx].lastAck = state.time;
+				g_syncData[state.object->GetObjectId()]->nodes[nodeIdx].lastAck = state.time;
 			}
 		}
 
@@ -1027,7 +1026,7 @@ void DirtyNode(rage::netObject* object, rage::netSyncDataNodeBase* node)
 	InitTree(tree);
 
 	size_t nodeIdx = GET_NIDX(tree, node);
-	const auto& sd = rage::g_syncData[((rage::netObject*)object)->objectId];
+	const auto& sd = rage::g_syncData[((rage::netObject*)object)->GetObjectId()];
 
 	if (!sd)
 	{
@@ -1067,10 +1066,10 @@ static const char* DescribeGameObject(void* object)
 
 void RenderNetObjectDetail(rage::netObject* netObject)
 {
-	ImGui::Text("Object ID: %d", netObject->objectId);
-	ImGui::Text("Object type: %d", netObject->objectType);
-	ImGui::Text("Object owner: %d", netObject->GetOwnerId());
-	ImGui::Text("Is remote: %s", netObject->GetIsRemote() ? "true" : "false");
+	ImGui::Text("Object ID: %d", netObject->GetObjectId());
+	ImGui::Text("Object type: %d", netObject->GetObjectType());
+	ImGui::Text("Object owner: %d", netObject->syncData.ownerId);
+	ImGui::Text("Is remote: %s", netObject->syncData.isRemote ? "true" : "false");
 	ImGui::Text("Game object: %s", netObject->GetGameObject() ? DescribeGameObject(netObject->GetGameObject()) : "NULL");
 
 	if (ImGui::Button("Force blend"))

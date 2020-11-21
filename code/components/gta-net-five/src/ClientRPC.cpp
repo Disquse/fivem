@@ -542,7 +542,7 @@ static InitFunction initFunction([]()
 
 										if (object)
 										{
-											auto obj = object->objectId;
+											auto obj = object->GetObjectId();
 
 											g_creationTokenToObjectId[creationToken] = (1 << 16) | obj;
 

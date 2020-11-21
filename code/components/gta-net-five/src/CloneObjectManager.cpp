@@ -38,7 +38,7 @@ static void netObjectMgrBase__RegisterNetworkObject(rage::netObjectMgr* manager,
 		object->CreateNetBlender();
 	}
 
-	if (!object->GetIsRemote())
+	if (!object->syncData.isRemote)
 	{
 #ifdef GTA_FIVE
 		if (object->CanSynchronise(true))
@@ -71,9 +71,9 @@ static void netObjectMgrBase__DestroyNetworkObject(rage::netObjectMgr* manager, 
 	{
 		CloneObjectMgr->DestroyNetworkObject(object);
 
-		if (!object->GetIsRemote() && object->GetNextOwnerId() == 0xFF)
+		if (!object->syncData.isRemote && object->syncData.nextOwnerId == 0xFF)
 		{
-			ObjectIds_ReturnObjectId(object->objectId);
+			ObjectIds_ReturnObjectId(object->GetObjectId());
 		}
 
 		delete object;

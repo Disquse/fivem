@@ -38,16 +38,19 @@ public:
 	inline virtual void SetCloningFrequency(int player, int frequency) { }
 
 public:
-	char pad;
-	uint8_t ownerId;
-	uint8_t nextOwnerId;
-	uint8_t isRemote;
-	uint8_t wantsToDelete : 1;
-	uint8_t unk1 : 1;
-	uint8_t shouldNotBeDeleted : 1;
-	uint8_t pad_4Dh[3];
-	uint8_t pad_50h[32];
-	uint32_t creationAckedPlayers;
+	char pad[48]; // +16
+	uint16_t objectType; // +64
+	uint16_t objectId; // +66
+	char pad_2[1]; // +68
+	uint8_t ownerId; // +69
+	uint8_t nextOwnerId; // +70
+	uint8_t isRemote; // +71
+	uint8_t wantsToDelete : 1; // +72
+	char pad_3[3]; // +73;
+	uint8_t shouldNotBeDeleted : 1; // +76
+	char pad_4[3];
+	char pad_5[32];
+	uint32_t creationAckedPlayers; // +112
 	uint32_t m64;
 	uint32_t m68;
 	uint32_t m6C;
@@ -59,18 +62,10 @@ public:
 	}
 };
 
-// REDM1S: CNetworkSyncDataULBase was changed in RDR3, probably was moved to +16, but objectType and objectId changed
 class netObject
 {
 public:
-	char pad[56]; // +8
-	uint16_t objectType; // +64
-	uint16_t objectId; // +66
-	char pad_2[1]; // +68
-	uint8_t ownerId; // +69
-	uint8_t nextOwnerId;
-	uint8_t isRemote;
-	CNetworkSyncDataULBase syncData; // +68
+	CNetworkSyncDataULBase syncData; // +8
 
 	inline netBlender* GetBlender()
 	{
@@ -159,41 +154,19 @@ public:
 	virtual int GetNumPlayersToUpdatePerBatch() = 0; // 80
 	virtual void LogScopeReason(bool toggle, void* player, void* unk) = 0;
 
-	// REDM1S: find a better compatibility layer
-
-	inline uint8_t GetOwnerId()
+	inline uint16_t GetObjectId()
 	{
-		return ownerId;
+		return syncData.objectId;
 	}
 
-	inline void SetOwnerId(uint8_t value)
+	inline uint16_t GetObjectType()
 	{
-		ownerId = value;
-	}
-
-	inline uint8_t GetNextOwnerId()
-	{
-		return nextOwnerId;
-	}
-
-	inline void SetNextOwnerId(uint8_t value)
-	{
-		nextOwnerId = value;
-	}
-
-	inline uint8_t GetIsRemote()
-	{
-		return isRemote;
-	}
-
-	inline void SetIsRemote(bool value)
-	{
-		isRemote = value;
+		return syncData.objectType;
 	}
 
 	inline std::string ToString()
 	{
-		return fmt::sprintf("[netObj:%d:%d]", objectId, objectType);
+		return fmt::sprintf("[netObj:%d:%d]", GetObjectId(), GetObjectType());
 	}
 };
 
