@@ -25,7 +25,7 @@
 
 #include <Hooking.h>
 
-// REDM1S: doesn't draw sync node data, crashes on tree selection (probably logger stuff missmatch)
+// REDM1S: crashes when viewing some specific nodes, not all data is printed, missing some stuff comparing to V
 
 inline size_t GET_NIDX(rage::netSyncTree* tree, void* node)
 {
@@ -44,6 +44,18 @@ static bool Splitter(bool split_vertically, float thickness, float* size1, float
 	return SplitterBehavior(bb, id, split_vertically ? ImGuiAxis_X : ImGuiAxis_Y, size1, size2, min_size1, min_size2, 0.0f);
 }
 
+#ifdef IS_RDR3
+struct LogVector
+{
+	float x;
+	char pad1[4];
+	float y;
+	char pad2[4];
+	float z;
+	char pad3[4];
+};
+#endif
+
 namespace rage
 {
 	class netLogStub
@@ -51,6 +63,7 @@ namespace rage
 	public:
 		virtual ~netLogStub() = default;
 
+#ifdef GTA_FIVE
 		virtual void m_8() = 0;
 
 		virtual void m_10() = 0;
@@ -66,6 +79,29 @@ namespace rage
 		virtual void m_38() = 0;
 
 		virtual void m_40() = 0;
+#elif IS_RDR3
+		virtual void m_8(const char* prefix, uint64_t value) = 0;
+
+		virtual void m_10(const char* prefix, uint64_t value) = 0;
+
+		virtual void m_18(const char* prefix, uint64_t value) = 0;
+
+		virtual void m_20(const char* prefix, uint64_t value) = 0;
+
+		virtual void m_28(const char* prefix, LogVector* value) = 0; // log vector?
+
+		virtual void m_30(const char* prefix, uint64_t value) = 0;
+
+		virtual void m_38(const char* prefix, uint64_t value) = 0;
+
+		virtual void m_40(const char* prefix, uint32_t value) = 0; // log hash
+
+		virtual void m_48(const char* prefix, uint64_t value) = 0;
+
+		virtual void m_50(const char* prefix, uint8_t value) = 0; // log boolean?
+
+		virtual void LogString(const char* prefix, const char* fmt, ...) = 0;
+#endif
 
 		// ?
 	};
@@ -315,18 +351,16 @@ public:
 
 	}
 
-	virtual void m_8()
-	{
+#ifdef GTA_FIVE
+	virtual void m_8() { }
 
-	}
+	virtual void m_10() { }
 
-	virtual void m_10() {}
+	virtual void m_18() { }
 
-	virtual void m_18() {}
+	virtual void m_20() { }
 
-	virtual void m_20() {}
-
-	virtual void m_28() {}
+	virtual void m_28() { }
 
 	virtual void LogString(const char* prefix, const char* fmt, ...)
 	{
@@ -340,9 +374,72 @@ public:
 		m_logger(fmt::sprintf("%s%s%s", prefix ? prefix : "", prefix ? ": " : "", buf));
 	}
 
-	virtual void m_38() {}
+	virtual void m_38() { }
 
-	virtual void m_40() {}
+	virtual void m_40() { }
+#elif IS_RDR3
+	virtual void m_8(const char* prefix, uint64_t value)
+	{
+		trace("m_8 %d\n", value);
+	}
+
+	virtual void m_10(const char* prefix, uint64_t value)
+	{
+		trace("m_10 %d\n", value);
+	}
+
+	virtual void m_18(const char* prefix, uint64_t value)
+	{
+		trace("m_18 %d\n", value);
+	}
+
+	virtual void m_20(const char* prefix, uint64_t value)
+	{
+		trace("m_20 %d\n", value);
+	}
+
+	virtual void m_28(const char* prefix, LogVector* value)
+	{
+		m_logger(fmt::sprintf("%s%s%f %f %f", prefix ? prefix : "", prefix ? ": " : "", value->x, value->y, value->z));
+	}
+
+	virtual void m_30(const char* prefix, uint64_t value)
+	{
+		trace("m_30 %d\n", value);
+	}
+
+	virtual void m_38(const char* prefix, uint64_t value)
+	{
+		trace("m_38 %d\n", value);
+	}
+
+	virtual void m_40(const char* prefix, uint32_t value)
+	{
+		m_logger(fmt::sprintf("%s%s%d", prefix ? prefix : "", prefix ? ": " : "", value));
+	}
+
+	virtual void m_48(const char* prefix, uint64_t value)
+	{
+		m_logger(fmt::sprintf("%s%s%d", prefix ? prefix : "", prefix ? ": " : "", value));
+	}
+
+	virtual void m_50(const char* prefix, uint8_t value)
+	{
+		m_logger(fmt::sprintf("%s%s%d", prefix ? prefix : "", prefix ? ": " : "", value));
+	}
+
+	virtual void LogString(const char* prefix, const char* fmt, ...)
+	{
+		char buf[512];
+
+		va_list ap;
+		va_start(ap, fmt);
+		vsnprintf(buf, sizeof(buf), fmt, ap);
+		va_end(ap);
+
+		m_logger(fmt::sprintf("%s%s%s", prefix ? prefix : "", prefix ? ": " : "", buf));
+	}
+#endif
 
 private:
 	std::function<void(const std::string&)> m_logger;
@@ -1096,17 +1193,21 @@ void RenderSyncNodeDetail(rage::netObject* netObject, rage::netSyncNodeBase* nod
 	node->LogObject(netObject, &logger);
 	StorePlayerAppearanceDataNode(node);
 
-	std::vector<std::string> right = syncLog[netObject->objectId][node];
+#ifdef GTA_FIVE
+	std::vector<std::string> right = syncLog[netObject->GetObjectId()][node];
+#endif
 
-	auto t = g_netObjectNodeMapping[netObject->objectId][node];
+#ifdef GTA_FIVE
+	auto t = g_netObjectNodeMapping[netObject->GetObjectId()][node];
 
 	InitTree(netObject->GetSyncTree());
-	auto& sd = rage::g_syncData[netObject->objectId]->nodes[GET_NIDX(netObject->GetSyncTree(), node)];
+	auto& sd = rage::g_syncData[netObject->GetObjectId()]->nodes[GET_NIDX(netObject->GetSyncTree(), node)];
 
 	ImGui::Text("Last %s: %d ms ago", std::get<int>(t) ? "written" : "read", rage::netInterface_queryFunctions::GetInstance()->GetTimestamp() - std::get<uint32_t>(t));
-	ImGui::Text("Last ack: %d ms ago", rage::netInterface_queryFunctions::GetInstance()->GetTimestamp() - sd.lastAck);
-	ImGui::Text("Last change: %d ms ago", rage::netInterface_queryFunctions::GetInstance()->GetTimestamp() - sd.lastChange);
-	ImGui::Text("Change - Ack: %d ms", sd.lastChange - sd.lastAck);
+	ImGui::Text("Last ack: %d ms ago", rage::netInterface_queryFunctions::GetInstance()->GetTimestamp() - rage::g_syncData[netObject->GetObjectId()].nodes[node].lastAck);
+	ImGui::Text("Last change: %d ms ago", rage::netInterface_queryFunctions::GetInstance()->GetTimestamp() - rage::g_syncData[netObject->GetObjectId()].nodes[node].lastChange);
+	ImGui::Text("Change - Ack: %d ms", rage::g_syncData[netObject->GetObjectId()].nodes[node].lastChange - rage::g_syncData[netObject->GetObjectId()].nodes[node].lastAck);
+#endif
 
 	ImGui::Columns(2);
 	ImGui::Text("Current");
@@ -1114,7 +1215,13 @@ void RenderSyncNodeDetail(rage::netObject* netObject, rage::netSyncNodeBase* nod
 	ImGui::Text("Saved");
 	ImGui::NextColumn();
 
-	for (int i = 0; i < std::max(left.size(), right.size()); i++)
+#ifdef GTA_FIVE
+	auto maxSize = std::max(left.size(), right.size());
+#elif IS_RDR3
+	auto maxSize = left.size();
+#endif
+
+	for (int i = 0; i < maxSize; i++)
 	{
 		if (i < left.size())
 		{
@@ -1127,11 +1234,13 @@ void RenderSyncNodeDetail(rage::netObject* netObject, rage::netSyncNodeBase* nod
 
 		ImGui::NextColumn();
 
+#ifdef GTA_FIVE
 		if (i < right.size())
 		{
 			ImGui::Text("%s", right[i].c_str());
 		}
 		else
+#endif
 		{
 			ImGui::Text("");
 		}
