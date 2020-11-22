@@ -1880,6 +1880,17 @@ namespace rage
 
 static CNetGamePlayer* g_player31;
 
+bool EnsurePlayer31()
+{
+	if (!g_player31)
+	{
+		g_player31 = AllocateNetPlayer(nullptr);
+		g_player31->physicalPlayerIndex() = 31;
+	}
+
+	return (g_player31 != nullptr);
+}
+
 #include <chrono>
 
 using namespace std::chrono_literals;
@@ -1991,11 +2002,7 @@ static bool EventNeedsOriginalPlayer(rage::netGameEvent* ev)
 static void SendGameEventRaw(uint16_t eventId, rage::netGameEvent* ev)
 {
 	// TODO: use a real player for some things
-	if (!g_player31)
-	{
-		g_player31 = AllocateNetPlayer(nullptr);
-		g_player31->physicalPlayerIndex() = 31;
-	}
+	EnsurePlayer31();
 
 	// allocate a RAGE buffer
 	uint8_t packetStub[1024];
@@ -2147,11 +2154,7 @@ static void HandleNetGameEvent(const char* idata, size_t len)
 	}
 
 	// TODO: use a real player for some things that _are_ 32-safe
-	if (!g_player31)
-	{
-		g_player31 = AllocateNetPlayer(nullptr);
-		g_player31->physicalPlayerIndex() = 31;
-	}
+	EnsurePlayer31();
 
 	net::Buffer buf(reinterpret_cast<const uint8_t*>(idata), len);
 	auto sourcePlayerId = buf.Read<uint16_t>();

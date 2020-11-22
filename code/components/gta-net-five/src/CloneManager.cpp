@@ -48,6 +48,8 @@ void ObjectIds_AddObjectId(int objectId);
 void ObjectIds_StealObjectId(int objectId);
 void ObjectIds_ConfirmObjectId(int objectId);
 
+bool EnsurePlayer31();
+
 void AssociateSyncTree(int objectId, rage::netSyncTree* syncTree);
 
 rage::netObject* GetLocalPlayerPedNetObject();
@@ -494,14 +496,17 @@ void CloneManagerLocal::ProcessCreateAck(uint16_t objId, uint16_t uniqifier)
 	Log("%s: create ack %d\n", __func__, objId);
 }
 
-static hook::cdecl_stub<void(rage::netSyncTree*, rage::netObject*, uint8_t, uint16_t, uint32_t, int)> _processAck([]()
-{
 #ifdef GTA_FIVE
+static hook::cdecl_stub<void(rage::netSyncTree*, rage::netObject*, uint8_t, uint16_t, uint32_t, uint32_t)> _processAck([]()
+{
 	return hook::get_pattern("45 32 ED FF 50 20 8B CB 41", -0x34);
-#elif IS_RDR3
-	return hook::get_pattern("44 8B F7 FF 50 ? 48 8B C8 8B D7 E8", -0x4B);
-#endif
 });
+#elif IS_RDR3
+static hook::cdecl_stub<void(rage::netSyncTree*, rage::netObject*, uint8_t, uint16_t, uint32_t, uint64_t)> _processAck([]()
+{
+	return hook::get_pattern("44 8B F7 FF 50 ? 48 8B C8 8B D7 E8", -0x4B);
+});
+#endif
 
 void CloneManagerLocal::ProcessSyncAck(uint16_t objId, uint16_t uniqifier)
 {
@@ -524,9 +529,10 @@ void CloneManagerLocal::ProcessSyncAck(uint16_t objId, uint16_t uniqifier)
 			auto syncTree = netObj->GetSyncTree();
 			syncTree->AckCfx(netObj, m_ackTimestamp);
 
-			if (netObj->m_20())
+			if (netObj->m_20() && EnsurePlayer31())
 			{
-				_processAck(syncTree, netObj, 31, 0 /* seq? */, m_ackTimestamp, 0xFFFFFFFF);
+				// REDM1S: crashes, it seems a valid player check was changed and now it's less realible
+				//_processAck(syncTree, netObj, 31, 0 /* seq? */, m_ackTimestamp, 0xFFFFFFFF);
 			}
 		}
 	}
