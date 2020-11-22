@@ -11,6 +11,7 @@ class netObjectMgr
 public:
 	virtual ~netObjectMgr() = 0;
 
+	virtual void m_8() = 0; // GetObjectIDManagerForPlayer
 	virtual void Initialize() = 0;
 	virtual void Shutdown() = 0;
 	virtual void Update() = 0;

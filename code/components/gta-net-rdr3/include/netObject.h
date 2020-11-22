@@ -33,8 +33,6 @@ public:
 
 	inline virtual void m_48() { }
 
-	inline virtual void m_50() { }
-
 	inline virtual void SetCloningFrequency(int player, int frequency) { }
 
 public:
