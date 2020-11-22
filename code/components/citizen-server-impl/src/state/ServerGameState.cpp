@@ -27,7 +27,6 @@
 #include <ServerEventComponent.h>
 
 #include <boost/range/adaptors.hpp>
-#include <boost/math/constants/constants.hpp>
 
 #include <OneSyncVars.h>
 #include <DebugAlias.h>
@@ -103,7 +102,7 @@ namespace fx
 ClientEntityData::ClientEntityData(const sync::SyncEntityPtr& entity, uint64_t lastSent, bool isCreated)
 	: entityWeak(entity), lastSent(lastSent), isCreated(isCreated)
 {
-	
+
 }
 
 sync::SyncEntityPtr ClientEntityData::GetEntity(fx::ServerGameState* sgs) const
@@ -404,7 +403,7 @@ uint32_t ServerGameState::MakeScriptHandle(const fx::sync::SyncEntityPtr& ptr)
 			}
 			catch (std::bad_any_cast&)
 			{
-				
+
 			}
 		});
 
@@ -707,7 +706,7 @@ void ServerGameState::Tick(fx::ServerInstanceBase* instance)
 			// if entity relevant to nobody
 			{
 				std::lock_guard _(entity->guidMutex);
-				
+
 				if (entity->relevantTo.none())
 				{
 					// entity was requested as delete, nobody knows of it anymore: finalize
@@ -752,11 +751,12 @@ void ServerGameState::Tick(fx::ServerInstanceBase* instance)
 				entity->type == sync::NetObjEntityType::Plane ||
 				entity->type == sync::NetObjEntityType::Submarine ||
 				entity->type == sync::NetObjEntityType::Trailer ||
-				entity->type == sync::NetObjEntityType::Train)
+				entity->type == sync::NetObjEntityType::Train ||
+				entity->type == sync::NetObjEntityType::DraftVeh)
 			{
 				vehicleData = entity->syncTree->GetVehicleGameState();
 			}
-			
+
 			relevantEntities[maxValidEntity] = { entity, entityPosition, vehicleData, entity->GetClient() };
 			maxValidEntity++;
 		}
@@ -769,7 +769,7 @@ void ServerGameState::Tick(fx::ServerInstanceBase* instance)
 	static int lastUpdateSlot = initSlot;
 	int iterations = 0;
 	int slot = lastUpdateSlot;
-	
+
 	while (iterations < ((fx::IsBigMode() ? 8 : 16) * tickMul))
 	{
 		iterations++;
@@ -831,7 +831,7 @@ void ServerGameState::Tick(fx::ServerInstanceBase* instance)
 					continue;
 				}
 			}
-			
+
 			bool isRelevant = (g_oneSyncCulling->GetValue()) ? false : true;
 
 			if (ownsEntity && entity->type == fx::sync::NetObjEntityType::Player)
@@ -1089,7 +1089,7 @@ void ServerGameState::Tick(fx::ServerInstanceBase* instance)
 					clientDataUnlocked->entitiesToDestroy[entIdentifier] = { entity, { true, false } };
 				}
 			}
-			
+
 			// create entity here
 			else if (isRelevant)
 			{
@@ -1170,10 +1170,10 @@ void ServerGameState::Tick(fx::ServerInstanceBase* instance)
 			playerPosns = GetPlayerFocusPos(playerEntity);
 		}
 
-	
+
 		// process entities leaving our scope
 		const auto& clientRegistry = m_instance->GetComponent<fx::ClientRegistry>();
-		
+
 		// if any relevant entities are getting deleted, add them to our removal list and remove them from the relevancy list.
 		auto& syncedEntities = clientDataUnlocked->syncedEntities;
 		auto& entitiesToDestroy = clientDataUnlocked->entitiesToDestroy;
@@ -1217,7 +1217,7 @@ void ServerGameState::Tick(fx::ServerInstanceBase* instance)
 				if (!deletionData.outOfScope)
 				{
 					entity->deletedFor.set(slotId);
-				}	
+				}
 				// entity still exists, just going out of scope
 				else
 				{
@@ -1535,7 +1535,7 @@ void ServerGameState::Tick(fx::ServerInstanceBase* instance)
 
 				auto _ent = entity;
 
-				auto runSync = [this, _ent, &syncType, curTime, &scl, baseFrameIndex, localLastFrameIndex, wasForceUpdate](auto&& preCb) 
+				auto runSync = [this, _ent, &syncType, curTime, &scl, baseFrameIndex, localLastFrameIndex, wasForceUpdate](auto&& preCb)
 				{
 					scl->EnqueueCommand([this,
 										entity = _ent,
@@ -1544,7 +1544,7 @@ void ServerGameState::Tick(fx::ServerInstanceBase* instance)
 										baseFrameIndex,
 										localLastFrameIndex,
 										curTime,
-										wasForceUpdate](sync::SyncCommandState& cmdState) 
+										wasForceUpdate](sync::SyncCommandState& cmdState)
 					{
 						auto entityClient = entity->GetClient();
 						if (!entityClient)
@@ -1740,7 +1740,7 @@ void ServerGameState::Tick(fx::ServerInstanceBase* instance)
 #else
 		scl->Execute(client);
 #endif
-	
+
 		GS_LOG("Tick completed for cl %d.\n", client->GetNetId());
 	});
 
@@ -1772,7 +1772,7 @@ void ServerGameState::OnCloneRemove(const fx::sync::SyncEntityPtr& entity, const
 		gscomms_execute_callback_on_sync_thread(doRemove);
 	});
 
-	// remove vehicle occupants
+	// REDM1S: remove vehicle occupants
 	if (entity->type == sync::NetObjEntityType::Ped ||
 		entity->type == sync::NetObjEntityType::Player)
 	{
@@ -1866,7 +1866,7 @@ void ServerGameState::UpdateEntities()
 			}
 		}
 
-		// update vehicle seats, if it's a ped
+		// REDM1S: update vehicle seats, if it's a ped
 		if (entity->type == sync::NetObjEntityType::Ped ||
 			entity->type == sync::NetObjEntityType::Player)
 		{
@@ -1972,7 +1972,7 @@ void ServerGameState::SendWorldGrid(void* entry /* = nullptr */, const fx::Clien
 
 	if (client)
 	{
-		sendWorldGrid(client);		
+		sendWorldGrid(client);
 	}
 	else
 	{
@@ -2261,7 +2261,7 @@ void ServerGameState::ReassignEntity(uint32_t entityHandle, const fx::ClientShar
 
 		entity->GetLastOwnerUnsafe() = oldClientRef;
 		entity->GetClientUnsafe() = targetClient;
-		
+
 		if (entity->stateBag)
 		{
 			if (targetClient)
@@ -2282,7 +2282,7 @@ void ServerGameState::ReassignEntity(uint32_t entityHandle, const fx::ClientShar
 			sourceData->objectIds.erase(entityHandle);
 		}
 	}
-	
+
 	{
 		if (targetClient)
 		{
@@ -2575,7 +2575,7 @@ void ServerGameState::ClearClientFromWorldGrid(const fx::ClientSharedPtr& target
 	auto slotId = targetClient->GetSlotId();
 	auto netId = targetClient->GetNetId();
 
-	
+
 	decltype(m_worldGrids)::iterator gridRef;
 
 	{
@@ -2742,7 +2742,7 @@ void ServerGameState::RemoveClone(const fx::ClientSharedPtr& client, uint16_t ob
 	{
 		std::shared_lock entitiesByIdLock(m_entitiesByIdMutex);
 		entityRef = m_entitiesById[objectId].lock();
-		
+
 		// start deleting
 		if (entityRef)
 		{
@@ -3059,7 +3059,7 @@ bool ServerGameState::ProcessClonePacket(const fx::ClientSharedPtr& client, rl::
 		case sync::NetObjEntityType::Player:
 		{
 			auto data = GetClientDataUnlocked(this, client);
-			
+
 			std::unique_lock _lock(data->playerEntityMutex);
 			sync::SyncEntityPtr playerEntity = data->playerEntity.lock();
 
@@ -3168,7 +3168,7 @@ bool ServerGameState::ProcessClonePacket(const fx::ClientSharedPtr& client, rl::
 			/*NETEV entityCreating SERVER
 			/#*
 			 * A server-side event that is triggered when an entity is being created.
-			 * 
+			 *
 			 * This event **can** be canceled to instantly delete the entity.
 			 *
 			 * @param entity - The created entity handle.
@@ -3327,7 +3327,7 @@ void ServerGameState::ParseAckPacket(const fx::ClientSharedPtr& client, net::Buf
 					if (syncTree)
 					{
 						entity->deletedFor.reset(client->GetSlotId());
-						
+
 						auto [lock, clientData] = GetClientData(this, client);
 						if (auto secIt = clientData->syncedEntities.find(MakeHandleUniqifierPair(objectId, uniqifier)); secIt != clientData->syncedEntities.end())
 						{
@@ -3402,7 +3402,7 @@ void ServerGameState::ParseClonePacket(const fx::ClientSharedPtr& client, net::B
 	uint32_t numCreates = 0, numSyncs = 0, numRemoves = 0;
 
 	bool end = false;
-	
+
 	while (!msgBuf.IsAtEnd() && !end)
 	{
 		auto dataType = msgBuf.Read<uint8_t>(3);
@@ -3740,7 +3740,7 @@ void ServerGameState::DeleteEntity(const fx::sync::SyncEntityPtr& entity)
 {
 	if (entity->type != sync::NetObjEntityType::Player && entity->syncTree)
 	{
-		gscomms_execute_callback_on_sync_thread([=]() 
+		gscomms_execute_callback_on_sync_thread([=]()
 		{
 			RemoveClone({}, entity->handle);
 		});
@@ -3807,7 +3807,7 @@ void ServerGameState::AttachToObject(fx::ServerInstanceBase* instance)
 	auto sbac = fx::StateBagComponent::Create(fx::StateBagRole::Server);
 	sbac->SetGameInterface(this);
 
-	instance->GetComponent<fx::GameServer>()->GetComponent<fx::HandlerMapComponent>()->Add(HashRageString("msgStateBag"), 
+	instance->GetComponent<fx::GameServer>()->GetComponent<fx::HandlerMapComponent>()->Add(HashRageString("msgStateBag"),
 		{ fx::ThreadIdx::Sync, [sbac](const fx::ClientSharedPtr& client, net::Buffer& buffer) {
 		if (client->GetSlotId() != -1)
 		{
@@ -3841,7 +3841,7 @@ void ServerGameState::AttachToObject(fx::ServerInstanceBase* instance)
 
 	static auto clearAreaCommand = instance->AddCommand("onesync_clearArea", [this](float x1, float y1, float x2, float y2)
 	{
-		gscomms_execute_callback_on_sync_thread([=]() 
+		gscomms_execute_callback_on_sync_thread([=]()
 		{
 			std::shared_lock lock(m_entityListMutex);
 			for (auto& entity : m_entityList)
@@ -3867,7 +3867,7 @@ void ServerGameState::AttachToObject(fx::ServerInstanceBase* instance)
 	static auto showObjectIdsCommand = instance->AddCommand("onesync_showObjectIds", [this]()
 	{
 		console::Printf("net", "^2GLOBAL: %d/%d object IDs used/sent (%.2f percent)^7\n", m_objectIdsUsed.count(), m_objectIdsSent.count(), (m_objectIdsUsed.count() / (float)m_objectIdsSent.count()) * 100.0f);
-		
+
 		std::shared_lock entitesByIdLock(m_entitiesByIdMutex);
 		m_instance->GetComponent<fx::ClientRegistry>()->ForAllClients([this](const fx::ClientSharedPtr& client)
 		{
@@ -3897,879 +3897,6 @@ void ServerGameState::AttachToObject(fx::ServerInstanceBase* instance)
 #include <ServerInstanceBaseRef.h>
 #include <ScriptEngine.h>
 
-struct CFireEvent
-{
-	void Parse(rl::MessageBuffer& buffer);
-
-	inline std::string GetName()
-	{
-		return "fireEvent";
-	}
-
-	struct fire
-	{
-		int v1;
-		bool v2;
-		uint16_t v3;
-		bool v4;
-		float v5X;
-		float v5Y;
-		float v5Z;
-		float posX;
-		float posY;
-		float posZ;
-		uint16_t v7;
-		bool v8;
-		uint8_t maxChildren;
-		float v10;
-		float v11;
-		bool v12;
-		int v13;
-		uint16_t fireId;
-
-		MSGPACK_DEFINE_MAP(v1,v2,v3,v4,v5X,v5Y,v5Z,posX,posY,posZ,v7,v8,maxChildren,v10,v11,v12,v13,fireId);
-	};
-
-	std::vector<fire> fires;
-
-	MSGPACK_DEFINE(fires);
-};
-
-void CFireEvent::Parse(rl::MessageBuffer& buffer)
-{
-	int count = buffer.Read<int>(3);
-	if (count > 5)
-		count = 5;
-
-	for (int i = 0; i < count; i++)
-	{
-		fire f;
-		f.v1 = buffer.Read<int>(4);
-		f.v2 = buffer.Read<uint8_t>(1);
-		if (f.v2)
-			f.v3 = buffer.Read<uint16_t>(13);
-		else
-			f.v3 = 0;
-		if (buffer.Read<uint8_t>(1))
-		{
-			f.v5X = buffer.ReadSignedFloat(19, 27648.0f);
-			f.v5Y = buffer.ReadSignedFloat(19, 27648.0f);
-			f.v5Z = buffer.ReadFloat(19, 4416.0f) - 1700.0f;
-		}
-		else
-		{
-			f.v5X = 0.0f;
-			f.v5Y = 0.0f;
-			f.v5Z = 0.0f;
-		}
-		f.posX = buffer.ReadSignedFloat(19, 27648.0f);
-		f.posY = buffer.ReadSignedFloat(19, 27648.0f);
-		f.posZ = buffer.ReadFloat(19, 4416.0f) - 1700.0f;
-		f.v7 = buffer.Read<uint16_t>(13);
-		f.v8 = buffer.Read<uint8_t>(1);
-		f.maxChildren = buffer.Read<uint8_t>(5);
-		f.v10 = (buffer.Read<int>(16) / 65535.0f) * 90.0f;
-		f.v11 = (buffer.Read<int>(16) / 65535.0f) * 25.0f;
-		if (buffer.Read<uint8_t>(1))
-			f.v13 = buffer.Read<int>(32);
-		else
-			f.v13 = 0;
-		f.fireId = buffer.Read<uint16_t>(16);
-		fires.push_back(f);
-	}
-}
-
-struct CExplosionEvent
-{
-	void Parse(rl::MessageBuffer& buffer);
-
-	inline std::string GetName()
-	{
-		return "explosionEvent";
-	}
-
-	uint16_t f186;
-	uint16_t f208;
-	int ownerNetId;
-	uint16_t f214;
-	int explosionType;
-	float damageScale;
-
-	float posX;
-	float posY;
-	float posZ;
-
-	bool f242;
-	uint16_t f104;
-	float cameraShake;
-
-	bool isAudible;
-	bool f189;
-	bool isInvisible;
-	bool f126;
-	bool f241;
-	bool f243;
-
-	uint16_t f210;
-
-	float unkX;
-	float unkY;
-	float unkZ;
-
-	bool f190;
-	bool f191;
-
-	uint32_t f164;
-	
-	float posX224;
-	float posY224;
-	float posZ224;
-
-	bool f240;
-	uint16_t f218;
-	bool f216;
-
-	MSGPACK_DEFINE_MAP(f186,f208,ownerNetId,f214,explosionType,damageScale,posX,posY,posZ,f242,f104,cameraShake,isAudible,f189,isInvisible,f126,f241,f243,f210,unkX,unkY,unkZ,f190,f191,f164,posX224,posY224,posZ224,f240,f218,f216);
-};
-
-void CExplosionEvent::Parse(rl::MessageBuffer& buffer)
-{
-	f186 = buffer.Read<uint16_t>(16);
-	f208 = buffer.Read<uint16_t>(13);
-	ownerNetId = buffer.Read<uint16_t>(13);
-	f214 = buffer.Read<uint16_t>(13); // 1604+
-	explosionType = buffer.ReadSigned<int>(8); // 1604+ bit size
-	damageScale = buffer.Read<int>(8) / 255.0f;
-
-	posX = buffer.ReadSignedFloat(22, 27648.0f);
-	posY = buffer.ReadSignedFloat(22, 27648.0f);
-	posZ = buffer.ReadFloat(22, 4416.0f) - 1700.0f;
-
-	f242 = buffer.Read<uint8_t>(1);
-	f104 = buffer.Read<uint16_t>(16);
-	cameraShake = buffer.Read<int>(8) / 127.0f;
-
-	isAudible = buffer.Read<uint8_t>(1);
-	f189 = buffer.Read<uint8_t>(1);
-	isInvisible = buffer.Read<uint8_t>(1);
-	f126 = buffer.Read<uint8_t>(1);
-	f241 = buffer.Read<uint8_t>(1);
-	f243 = buffer.Read<uint8_t>(1); // 1604+
-
-	f210 = buffer.Read<uint16_t>(13);
-
-	unkX = buffer.ReadSignedFloat(16, 1.1f);
-	unkY = buffer.ReadSignedFloat(16, 1.1f);
-	unkZ = buffer.ReadSignedFloat(16, 1.1f);
-
-	f190 = buffer.Read<uint8_t>(1);
-	f191 = buffer.Read<uint8_t>(1);
-
-	f164 = buffer.Read<uint32_t>(32);
-	
-	if (f242)
-	{
-		posX224 = buffer.ReadSignedFloat(31, 27648.0f);
-		posY224 = buffer.ReadSignedFloat(31, 27648.0f);
-		posZ224 = buffer.ReadFloat(31, 4416.0f) - 1700.0f;
-	}
-	else
-	{
-		posX224 = 0;
-		posY224 = 0;
-		posZ224 = 0;
-	}
-
-	f240 = buffer.Read<uint8_t>(1);
-	if (f240)
-	{
-		f218 = buffer.Read<uint16_t>(16);
-
-		if (f191)
-		{
-			f216 = buffer.Read<uint8_t>(8);
-		}
-	}
-}
-
-struct CWeaponDamageEvent
-{
-	void Parse(rl::MessageBuffer& buffer);
-
-	inline std::string GetName()
-	{
-		return "weaponDamageEvent";
-	}
-
-	uint8_t damageType;
-	uint32_t weaponType; // weaponHash
-
-	bool overrideDefaultDamage;
-	bool hitEntityWeapon;
-	bool hitWeaponAmmoAttachment;
-	bool silenced;
-
-	uint32_t damageFlags;
-	bool hasActionResult;
-
-	uint32_t actionResultName;
-	uint16_t actionResultId;
-	uint32_t f104;
-
-	uint16_t weaponDamage;
-	bool isNetTargetPos;
-
-	float localPosX;
-	float localPosY;
-	float localPosZ;
-
-	bool f112;
-
-	uint32_t damageTime;
-	bool willKill;
-	uint32_t f120;
-	bool hasVehicleData;
-
-	uint16_t f112_1;
-
-	uint16_t parentGlobalId; // Source entity?
-	uint16_t hitGlobalId; // Target entity?
-
-	uint8_t tyreIndex;
-	uint8_t suspensionIndex;
-	uint8_t hitComponent;
-
-	bool f133;
-	bool hasImpactDir;
-
-	float impactDirX;
-	float impactDirY;
-	float impactDirZ;
-
-	MSGPACK_DEFINE_MAP(damageType, weaponType, overrideDefaultDamage, hitEntityWeapon, hitWeaponAmmoAttachment, silenced, damageFlags, hasActionResult, actionResultName, actionResultId, f104, weaponDamage, isNetTargetPos, localPosX, localPosY, localPosZ, f112, damageTime, willKill, f120, hasVehicleData, f112_1, parentGlobalId, hitGlobalId, tyreIndex, suspensionIndex, hitComponent, f133, hasImpactDir, impactDirX, impactDirY, impactDirZ);
-};
-
-void CWeaponDamageEvent::Parse(rl::MessageBuffer& buffer)
-{
-	if (Is2060()) {
-		buffer.Read<uint16_t>(16);
-	}
-
-	damageType = buffer.Read<uint8_t>(2);
-	weaponType = buffer.Read<uint32_t>(32);
-
-	overrideDefaultDamage = buffer.Read<uint8_t>(1);
-	hitEntityWeapon = buffer.Read<uint8_t>(1);
-	hitWeaponAmmoAttachment = buffer.Read<uint8_t>(1);
-	silenced = buffer.Read<uint8_t>(1);
-
-	damageFlags = buffer.Read<uint32_t>(Is2060() ? 24 : 21);
-	// (damageFlags >> 1) & 1
-	hasActionResult = buffer.Read<uint8_t>(1);
-
-	if (hasActionResult)
-	{
-		actionResultName = buffer.Read<uint32_t>(32);
-		actionResultId = buffer.Read<uint16_t>(16);
-		f104 = buffer.Read<uint32_t>(32);
-	}
-
-	if (overrideDefaultDamage)
-	{
-		weaponDamage = buffer.Read<uint16_t>(14);
-	}
-	else
-	{
-		weaponDamage = 0;
-	}
-
-	if (Is2060()) {
-		bool _f92 = buffer.Read<uint8_t>(1);
-		if (_f92) {
-			buffer.Read<uint8_t>(4);
-		}
-	}
-
-	isNetTargetPos = buffer.Read<uint8_t>(1);
-
-	if (isNetTargetPos)
-	{
-		localPosX = buffer.ReadSignedFloat(16, 55.f);  // divisor: 0x425C0000
-		localPosY = buffer.ReadSignedFloat(16, 55.f);
-		localPosZ = buffer.ReadSignedFloat(16, 55.f);
-	}
-
-	if (damageType == 3)
-	{
-		damageTime = buffer.Read<uint32_t>(32);
-		willKill = buffer.Read<uint8_t>(1);
-
-		if (hasActionResult)
-		{
-			hitGlobalId = buffer.Read<uint16_t>(13);
-		}
-		else
-		{
-			hitGlobalId = 0;
-		}
-
-		f112 = buffer.Read<uint8_t>(1);
-
-		if (!f112)
-		{
-			f112_1 = buffer.Read<uint16_t>(11);
-		}
-		else
-		{
-			f112_1 = buffer.Read<uint16_t>(16);
-		}
-	}
-	else
-	{
-		parentGlobalId = buffer.Read<uint16_t>(13);  // +118
-		hitGlobalId = buffer.Read<uint16_t>(13);  // +120
-	}
-
-	if (damageType < 2)
-	{
-		localPosX = buffer.ReadSignedFloat(16, 55.f);  // divisor: 0x425C0000
-		localPosY = buffer.ReadSignedFloat(16, 55.f);
-		localPosZ = buffer.ReadSignedFloat(16, 55.f);
-
-		if (damageType == 1)
-		{
-			hasVehicleData = buffer.Read<uint8_t>(1);
-
-			if (hasVehicleData)
-			{
-				tyreIndex = buffer.Read<uint8_t>(4); // +122
-				suspensionIndex = buffer.Read<uint8_t>(4); // +123
-			}
-		}
-	}
-	else
-	{
-		hitComponent = buffer.Read<uint8_t>(5); // +108
-	}
-
-	f133 = buffer.Read<uint8_t>(1);
-	hasImpactDir = buffer.Read<uint8_t>(1);
-
-	if (hasImpactDir)
-	{
-		impactDirX = buffer.ReadSignedFloat(16, 6.2831854820251f);  // divisor: 0x40C90FDB
-		impactDirY = buffer.ReadSignedFloat(16, 6.2831854820251f);
-		impactDirZ = buffer.ReadSignedFloat(16, 6.2831854820251f);
-	}
-}
-
-struct CVehicleComponentControlEvent
-{
-	void Parse(rl::MessageBuffer& buffer)
-	{
-		vehicleGlobalId = buffer.Read<uint16_t>(13);
-		pedGlobalId = buffer.Read<uint16_t>(13);
-		componentIndex = buffer.Read<uint16_t>(5);
-
-		request = buffer.Read<uint8_t>(1);
-		componentIsSeat = buffer.Read<uint8_t>(1);
-
-		if (componentIsSeat && request)
-		{
-			pedInSeat = buffer.Read<uint16_t>(13);
-		}
-		else
-		{
-			pedInSeat = 0;
-		}
-	}
-
-	inline std::string GetName()
-	{
-		return "vehicleComponentControlEvent";
-	}
-
-	int vehicleGlobalId;
-	int pedGlobalId;
-	int componentIndex;
-	bool request;
-	bool componentIsSeat;
-	int pedInSeat;
-
-	MSGPACK_DEFINE_MAP(vehicleGlobalId, pedGlobalId, componentIndex, request, componentIsSeat, pedInSeat);
-};
-
-struct CClearPedTasksEvent
-{
-	void Parse(rl::MessageBuffer& buffer)
-	{
-		pedId = buffer.Read<uint16_t>(13);
-		immediately = buffer.Read<uint8_t>(1);
-	}
-
-	inline std::string GetName()
-	{
-		return "clearPedTasksEvent";
-	}
-
-	int pedId;
-	bool immediately;
-
-	MSGPACK_DEFINE_MAP(pedId, immediately);
-};
-
-struct CRespawnPlayerPedEvent
-{
-	void Parse(rl::MessageBuffer& buffer)
-	{
-		posX = buffer.ReadSignedFloat(19, 27648.0f);
-		posY = buffer.ReadSignedFloat(19, 27648.0f);
-		posZ = buffer.ReadFloat(19, 4416.0f) - 1700.0f;
-
-		f64 = buffer.Read<uint32_t>(32);
-		f70 = buffer.Read<uint16_t>(13);
-		f72 = buffer.Read<uint32_t>(32);
-		f92 = buffer.Read<uint32_t>(32);
-
-		f96 = buffer.Read<uint8_t>(1);
-		f97 = buffer.Read<uint8_t>(1);
-		f99 = buffer.Read<uint8_t>(1);
-		f100 = buffer.Read<uint8_t>(1);
-
-		if (f100)
-		{
-			f80 = buffer.Read<uint32_t>(32);
-			f84 = buffer.Read<uint32_t>(32);
-			f88 = buffer.Read<uint32_t>(32);
-		}
-		else
-		{
-			f80 = 0;
-			f84 = 0;
-			f88 = 0;
-		}
-	}
-
-	inline std::string GetName()
-	{
-		return "respawnPlayerPedEvent";
-	}
-
-	int posX;
-	int posY;
-	int posZ;
-
-	int f64;
-	int f70;
-	int f72;
-	int f92;
-
-	bool f96;
-	bool f97;
-	bool f99;
-	bool f100;
-
-	int f80;
-	int f84;
-	int f88;
-
-	MSGPACK_DEFINE_MAP(posX, posY, posZ, f64, f70, f72, f92, f96, f97, f99, f100, f80, f84, f88);
-};
-
-struct CGiveWeaponEvent
-{
-    void Parse(rl::MessageBuffer& buffer)
-    {
-        pedId = buffer.Read<uint16_t>(13);
-        weaponType = buffer.Read<uint32_t>(32);
-        unk1 = buffer.Read<uint8_t>(1);
-        ammo = buffer.Read<uint16_t>(15);
-        givenAsPickup = buffer.Read<uint8_t>(1);
-    }
-
-    inline std::string GetName()
-    {
-        return "giveWeaponEvent";
-    }
-
-    int pedId;
-    int weaponType;
-    bool unk1;
-    int ammo;
-    bool givenAsPickup;
-
-    MSGPACK_DEFINE_MAP(pedId, weaponType, unk1, ammo, givenAsPickup);
-};
-
-struct CRemoveWeaponEvent
-{
-    void Parse(rl::MessageBuffer& buffer)
-    {
-        pedId = buffer.Read<uint16_t>(13);
-        weaponType = buffer.Read<uint32_t>(32);
-    }
-
-    inline std::string GetName()
-    {
-        return "removeWeaponEvent";
-    }
-
-    int pedId;
-    int weaponType;
-
-    MSGPACK_DEFINE_MAP(pedId, weaponType);
-};
-
-/*NETEV removeAllWeaponsEvent SERVER
-/#*
- * Triggered when a player removes all weapons from a ped owned by another player.
- *
- * @param sender - The ID of the player that triggered the event.
- * @param data - The event data.
- #/
-declare function removeAllWeaponsEvent(sender: number, data: {
-	pedId: number
-}): void;
-*/
-struct CRemoveAllWeaponsEvent
-{
-	void Parse(rl::MessageBuffer& buffer)
-	{
-		pedId = buffer.Read<uint16_t>(13);
-	}
-
-	inline std::string GetName()
-	{
-		return "removeAllWeaponsEvent";
-	}
-
-	int pedId;
-
-	MSGPACK_DEFINE_MAP(pedId);
-};
-
-/*NETEV startProjectileEvent SERVER
-/#*
- * Triggered when a projectile is created.
- *
- * @param sender - The ID of the player that triggered the event.
- * @param data - The event data.
- #/
-declare function startProjectileEvent(sender: number, data: {
-    ownerId: number,
-	projectileHash: number,
-	weaponHash: number,
-	initialPositionX: number,
-	initialPositionY: number,
-	initialPositionZ: number,
-	targetEntity: number,
-	firePositionX: number,
-	firePositionY: number,
-	firePositionZ: number,
-	effectGroup: number,
-	unk3: number,
-	commandFireSingleBullet: boolean,
-	unk4: number,
-	unk5: number,
-	unk6: number,
-	unk7: number,
-	unkX8: number,
-	unkY8: number,
-	unkZ8: number,
-	unk9: number,
-	unk10: number,
-	unk11: number,
-	throwTaskSequence: number,
-	unk12: number,
-	unk13: number,
-	unk14: number,
-	unk15: number,
-	unk16: number
-}): void;
-*/
-struct CStartProjectileEvent
-{
-    void Parse(rl::MessageBuffer& buffer)
-    {
-        ownerId = buffer.Read<uint16_t>(13);
-        projectileHash = buffer.Read<uint32_t>(32);
-
-        weaponHash = buffer.Read<uint32_t>(32);
-        initialPositionX = buffer.ReadSignedFloat(32, 16000.0f);
-        initialPositionY = buffer.ReadSignedFloat(32, 16000.0f);
-        initialPositionZ = buffer.ReadSignedFloat(32, 16000.0f);
-
-        targetEntity = buffer.Read<uint16_t>(13);
-        firePositionX = buffer.ReadSignedFloat(16, 1.1f);
-        firePositionY = buffer.ReadSignedFloat(16, 1.1f);
-        firePositionZ = buffer.ReadSignedFloat(16, 1.1f);
-
-        effectGroup = buffer.Read<uint16_t>(5);
-        unk3 = buffer.Read<uint16_t>(8);
-
-        commandFireSingleBullet = buffer.Read<uint8_t>(1);
-        unk4 = buffer.Read<uint8_t>(1);
-        unk5 = buffer.Read<uint8_t>(1);
-        unk6 = buffer.Read<uint8_t>(1);
-
-        if (unk6)
-        {
-            unk7 = buffer.Read<uint16_t>(7);
-        }
-
-        if (unk4)
-        {
-            unkX8 = buffer.ReadSignedFloat(16, 400.0f); // divisor 0x1418BC42C
-            unkY8 = buffer.ReadSignedFloat(16, 400.0f);
-            unkZ8 = buffer.ReadSignedFloat(16, 400.0f);
-        }
-
-        unk9 = buffer.Read<uint8_t>(1);
-        unk10 = buffer.Read<uint8_t>(1);
-
-        if (unk10)
-        {
-            // 0x1419E9B08 - 0x1418F0FDC
-            unk11 = buffer.ReadSignedFloat(18, 8000.0f) * 0.000003814712f;
-        }
-        else
-        {
-            unk11 = -1;
-        }
-
-        if (unk9)
-        {
-            throwTaskSequence = buffer.Read<uint32_t>(32);
-        }
-
-        unk12 = buffer.Read<uint8_t>(1);
-        unk13 = buffer.Read<uint16_t>(13);
-        unk14 = buffer.Read<uint16_t>(13);
-        unk15 = buffer.Read<uint8_t>(1);
-
-        if (unk15)
-        {
-            // TODO
-            buffer.Read<uint8_t>(9);
-            buffer.Read<uint8_t>(9);
-            buffer.Read<uint8_t>(9);
-        }
-
-        unk16 = buffer.Read<uint8_t>(16);
-    }
-
-    inline std::string GetName()
-    {
-        return "startProjectileEvent";
-    }
-
-    int ownerId;
-    int projectileHash; // Ammo hash
-
-    int weaponHash;
-    float initialPositionX;
-    float initialPositionY;
-    float initialPositionZ;
-
-    int targetEntity;
-    float firePositionX; // Direction?
-    float firePositionY;
-    float firePositionZ;
-
-    int effectGroup;
-    int unk3;
-
-    bool commandFireSingleBullet;
-    bool unk4;
-    bool unk5;
-    bool unk6;
-
-    int unk7;
-
-    float unkX8;
-    float unkY8;
-    float unkZ8;
-
-    bool unk9;
-    bool unk10;
-
-    int unk11;
-
-    int throwTaskSequence;
-
-    bool unk12;
-    int unk13;
-    int unk14;
-    bool unk15;
-
-    int unk16;
-
-    MSGPACK_DEFINE_MAP(ownerId, projectileHash, weaponHash, initialPositionX, initialPositionY, initialPositionZ, targetEntity, firePositionX, firePositionY, firePositionZ, effectGroup, unk3, commandFireSingleBullet, unk4, unk5, unk6, unk7, unkX8, unkY8, unkZ8, unk9, unk10, unk11, throwTaskSequence, unk12, unk13, unk14, unk15, unk16);
-};
-
-/*NETEV ptFxEvent SERVER
-/#*
- * Triggered when a particle fx (ptFx) is created.
- *
- * @param sender - The ID of the player that triggered the event.
- * @param data - The event data.
- #/
-declare function ptFxEvent(sender: number, data: {
-	effectHash: number,
-	assetHash: number,
-	posX: number,
-	posY: number,
-	posZ: number,
-	offsetX: number,
-	offsetY: number,
-	offsetZ: number,
-	rotX: number,
-	rotY: number,
-	rotZ: number,
-	scale: number,
-	axisBitset: number,
-	isOnEntity: boolean,
-	entityNetId: number,
-	f109: boolean,
-	f92: number,
-	f110: boolean,
-	f105: number,
-	f106: number,
-	f107: number,
-	f111: boolean,
-	f100: number
-}): void;
-*/
-struct CNetworkPtFXEvent
-{
-	void Parse(rl::MessageBuffer& buffer)
-	{
-		effectHash = buffer.Read<uint32_t>(32);
-		assetHash = buffer.Read<uint32_t>(32);
-
-		int _posX = buffer.ReadSignedFloat(19, 27648.0f);
-		int _posY = buffer.ReadSignedFloat(19, 27648.0f);
-		int _posZ = buffer.ReadFloat(19, 4416.0f) - 1700.0f;
-
-		rotX = buffer.ReadSignedFloat(19, 27648.0f) * toDegrees;
-		rotY = buffer.ReadSignedFloat(19, 27648.0f) * toDegrees;
-		rotZ = (buffer.ReadFloat(19, 4416.0f) - 1700.0f) * toDegrees;
-
-		scale = (buffer.Read<int>(10) / 1023.0f) * 10.0f;
-
-		axisBitset = buffer.Read<uint8_t>(3);
-
-		isOnEntity = buffer.Read<uint8_t>(1);
-
-		if (isOnEntity)
-		{
-			posX = 0.0f;
-			posY = 0.0f;
-			posZ = 0.0f;
-
-			offsetX = _posX;
-			offsetY = _posY;
-			offsetZ = _posZ;
-
-			entityNetId = buffer.Read<uint16_t>(13);
-		}
-		else
-		{
-			posX = _posX;
-			posY = _posY;
-			posZ = _posZ;
-
-			offsetX = 0.0f;
-			offsetY = 0.0f;
-			offsetZ = 0.0f;
-
-			entityNetId = 0;
-		}
-
-		f109 = buffer.Read<uint8_t>(1);
-
-		if (f109)
-		{
-			f92 = buffer.Read<int>(32);
-		}
-		else
-		{
-			f92 = -1;
-		}
-
-		f110 = buffer.Read<uint8_t>(1);
-
-		if (f110)
-		{
-			f105 = buffer.Read<uint16_t>(8);
-			f106 = buffer.Read<uint16_t>(8);
-			f107 = buffer.Read<uint16_t>(8);
-		}
-		else
-		{
-			f105 = 0;
-			f107 = 0;
-		}
-
-		f111 = buffer.Read<uint8_t>(1);
-
-		if (f111)
-		{
-			f100 = buffer.Read<int>(8) / 255.0f;
-		}
-		else
-		{
-			f100 = -1.0f;
-		}
-	}
-
-	inline std::string GetName()
-	{
-		return "ptFxEvent";
-	}
-
-	double toDegrees = 180.0 / boost::math::constants::pi<double>();
-
-	uint32_t effectHash;
-	uint32_t assetHash;
-
-	float posX;
-	float posY;
-	float posZ;
-
-	float offsetX;
-	float offsetY;
-	float offsetZ;
-
-	float rotX;
-	float rotY;
-	float rotZ;
-
-	float scale;
-
-	uint8_t axisBitset;
-
-	bool isOnEntity;
-
-	uint16_t entityNetId;
-
-	bool f109;
-
-	int f92;
-
-	bool f110;
-
-	int f105;
-	int f106;
-	int f107;
-
-	bool f111;
-
-	float f100;
-
-	MSGPACK_DEFINE_MAP(effectHash, assetHash, posX, posY, posZ, offsetX, offsetY, offsetZ, rotX, rotY, rotZ, scale, axisBitset, isOnEntity, entityNetId, f109, f92, f110, f105, f106, f107, f111, f100);
-};
-
 template<typename TEvent>
 inline auto GetHandler(fx::ServerInstanceBase* instance, const fx::ClientSharedPtr& client, net::Buffer&& buffer) -> std::function<bool()>
 {
@@ -4796,7 +3923,7 @@ inline auto GetHandler(fx::ServerInstanceBase* instance, const fx::ClientSharedP
 	};
 }
 
-enum GTA_EVENT_IDS
+enum RDR3_EVENT_IDS
 {
 	OBJECT_ID_FREED_EVENT,
 	OBJECT_ID_REQUEST_EVENT,
@@ -4805,25 +3932,20 @@ enum GTA_EVENT_IDS
 	REQUEST_CONTROL_EVENT,
 	GIVE_CONTROL_EVENT,
 	WEAPON_DAMAGE_EVENT,
+	INCAPACITATED_REVIVE_EVENT,
+	INCAPACITATED_EXECUTE_EVENT,
 	REQUEST_PICKUP_EVENT,
 	REQUEST_MAP_PICKUP_EVENT,
-	GAME_CLOCK_EVENT,
-	GAME_WEATHER_EVENT,
+	REQUEST_IS_VOLUME_EMPTY,
 	RESPAWN_PLAYER_PED_EVENT,
-	GIVE_WEAPON_EVENT,
-	REMOVE_WEAPON_EVENT,
-	REMOVE_ALL_WEAPONS_EVENT,
-	VEHICLE_COMPONENT_CONTROL_EVENT,
+	GENERIC_COMPONENT_CONTROL_EVENT,
 	FIRE_EVENT,
+	FIRE_TRAIL_UPDATE_EVENT,
 	EXPLOSION_EVENT,
 	START_PROJECTILE_EVENT,
-	UPDATE_PROJECTILE_TARGET_EVENT,
-	REMOVE_PROJECTILE_ENTITY_EVENT,
-	BREAK_PROJECTILE_TARGET_LOCK_EVENT,
 	ALTER_WANTED_LEVEL_EVENT,
 	CHANGE_RADIO_STATION_EVENT,
 	RAGDOLL_REQUEST_EVENT,
-	PLAYER_TAUNT_EVENT,
 	PLAYER_CARD_STAT_EVENT,
 	DOOR_BREAK_EVENT,
 	SCRIPTED_GAME_EVENT,
@@ -4831,60 +3953,120 @@ enum GTA_EVENT_IDS
 	REMOTE_SCRIPT_LEAVE_EVENT,
 	MARK_AS_NO_LONGER_NEEDED_EVENT,
 	CONVERT_TO_SCRIPT_ENTITY_EVENT,
-	SCRIPT_WORLD_STATE_EVENT,
-	CLEAR_AREA_EVENT,
-	CLEAR_RECTANGLE_AREA_EVENT,
-	NETWORK_REQUEST_SYNCED_SCENE_EVENT,
-	NETWORK_START_SYNCED_SCENE_EVENT,
-	NETWORK_STOP_SYNCED_SCENE_EVENT,
-	NETWORK_UPDATE_SYNCED_SCENE_EVENT,
+	INCIDENT_EVENT,
 	INCIDENT_ENTITY_EVENT,
+	CLEAR_AREA_EVENT,
+	CLEAR_VOLUME_EVENT,
 	GIVE_PED_SCRIPTED_TASK_EVENT,
 	GIVE_PED_SEQUENCE_TASK_EVENT,
 	NETWORK_CLEAR_PED_TASKS_EVENT,
-	NETWORK_START_PED_ARREST_EVENT,
-	NETWORK_START_PED_UNCUFF_EVENT,
 	NETWORK_SOUND_CAR_HORN_EVENT,
 	NETWORK_ENTITY_AREA_STATUS_EVENT,
 	NETWORK_GARAGE_OCCUPIED_STATUS_EVENT,
-	PED_CONVERSATION_LINE_EVENT,
+	NETWORK_PED_WHISTLE_EVENT,
+	PED_SPEECH_CREATE_EVENT,
+	PED_SPEECH_PLAY_EVENT,
+	PED_SPEECH_STOP_EVENT,
+	PED_SPEECH_ASSIGN_VOICE_EVENT,
 	SCRIPT_ENTITY_STATE_CHANGE_EVENT,
-	NETWORK_PLAY_SOUND_EVENT,
-	NETWORK_STOP_SOUND_EVENT,
-	NETWORK_PLAY_AIRDEFENSE_FIRE_EVENT,
-	NETWORK_BANK_REQUEST_EVENT,
-	REQUEST_DOOR_EVENT,
-	NETWORK_TRAIN_REPORT_EVENT,
+	NETWORK_PLAY_SCRIPT_SOUND_EVENT,
+	NETWORK_PLAY_AUDIO_ENTITY_SOUND_EVENT,
+	NETWORK_STOP_SCRIPT_SOUND_EVENT,
+	NETWORK_STOP_AUDIO_ENTITY_SOUND_EVENT,
 	NETWORK_TRAIN_REQUEST_EVENT,
 	NETWORK_INCREMENT_STAT_EVENT,
 	MODIFY_VEHICLE_LOCK_WORD_STATE_DATA,
-	MODIFY_PTFX_WORD_STATE_DATA_SCRIPTED_EVOLVE_EVENT,
 	REQUEST_PHONE_EXPLOSION_EVENT,
 	REQUEST_DETACHMENT_EVENT,
 	KICK_VOTES_EVENT,
 	GIVE_PICKUP_REWARDS_EVENT,
-	NETWORK_CRC_HASH_CHECK_EVENT,
 	BLOW_UP_VEHICLE_EVENT,
 	NETWORK_SPECIAL_FIRE_EQUIPPED_WEAPON,
 	NETWORK_RESPONDED_TO_THREAT_EVENT,
-	NETWORK_SHOUT_TARGET_POSITION,
-	VOICE_DRIVEN_MOUTH_MOVEMENT_FINISHED_EVENT,
+	NETWORK_SHOUT_TARGET_POSITION_EVENT,
 	PICKUP_DESTROYED_EVENT,
-	UPDATE_PLAYER_SCARS_EVENT,
-	NETWORK_CHECK_EXE_SIZE_EVENT,
 	NETWORK_PTFX_EVENT,
 	NETWORK_PED_SEEN_DEAD_PED_EVENT,
-	REMOVE_STICKY_BOMB_EVENT,
-	NETWORK_CHECK_CODE_CRCS_EVENT,
-	INFORM_SILENCED_GUNSHOT_EVENT,
 	PED_PLAY_PAIN_EVENT,
-	CACHE_PLAYER_HEAD_BLEND_DATA_EVENT,
-	REMOVE_PED_FROM_PEDGROUP_EVENT,
-	REPORT_MYSELF_EVENT,
+	ADD_OR_REMOVE_PED_FROM_PEDGROUP_EVENT,
+	NETWORK_START_PED_HOGTIE_EVENT,
+	NETWORK_SEND_PED_LASSO_ATTACH_EVENT,
+	NETWORK_SEND_PED_LASSO_DETTACH_EVENT,
+	NETWORK_SEND_CARRIABLE_UPDATE_CARRY_STATE_EVENT,
+	REQUEST_CONTROL_REQUESTER_EVENT,
+	NETWORK_VOLUME_LOCK_REQUEST_EVENT,
+	NETWORK_VOLUME_LOCK_REQUEST_FAILURE_EVENT,
+	NETWORK_VOLUME_LOCK_KEEP_ALIVE_EVENT,
+	NETWORK_VOLUME_LOCK_MOVE_EVENT,
+	NETWORK_VOLUME_LOCK_ATTACH_EVENT,
+	NETWORK_VOLUME_LOCK_DETACH_EVENT,
+	NETWORK_VOLUME_LOCK_RESIZE_EVENT,
+	NETWORK_VOLUME_LOCK_RELEASE_EVENT,
+	NETWORK_VOLUME_LOCK_DATA_EVENT,
+	NETWORK_MAKE_WITNESS_EVENT,
+	NETWORK_REMOVE_WITNESS_EVENT,
+	NETWORK_GANG_INVITE_PLAYER_EVENT,
+	NETWORK_GANG_INVITE_RESPONSE_EVENT,
+	NETWORK_GANG_INVITE_CANCEL_EVENT,
+	NETWORK_GANG_JOIN_REQUEST_EVENT,
+	NETWORK_REQUEST_CONVERT_TO_SCRIPT_ENTITY_EVENT,
+	NETWORK_REGISTER_CRIME_EVENT,
+	NETWORK_START_LOOT_EVENT,
+	NETWORK_NEW_BUG_EVENT,
 	REPORT_CASH_SPAWN_EVENT,
-	ACTIVATE_VEHICLE_SPECIAL_ABILITY_EVENT,
-	BLOCK_WEAPON_SELECTION,
-	NETWORK_CHECK_CATALOG_CRC,
+	NETWORK_CHEST_REQUEST_EVENT,
+	NETWORK_CHEST_DATA_CHANGE_EVENT,
+	NETWORK_CHEST_RELEASE_EVENT,
+	NETWORK_CLEAR_GANG_BOUNTY_EVENT,
+	NETWORK_PLAYER_REQUEST_CONTENTION_EVENT,
+	NETWORK_START_FALLBACK_CARRY_ACTION_EVENT,
+	NETWORK_GIVE_ENERGY_EVENT,
+	NETWORK_DOOR_STATE_CHANGE,
+	NETWORK_STAMINA_COST_EVENT,
+	NETWORK_REMOVE_DOOR,
+	SCRIPT_COMMAND_EVENT,
+	NETWORK_KNOCK_PED_OFF_VEHICLE_EVENT,
+	NETWORK_SPAWN_SEARCH_EVENT,
+	NETWORK_ROPE_WORLD_STATE_DATA_BREAK_EVENT,
+	NETWORK_PLAYER_HAT_EVENT,
+	NETWORK_CRIME_SCENE_EVENT,
+	NETWORK_POINT_OF_INTEREST_EVENT,
+	NETWORK_DESTROY_VEHICLE_LOCK_EVENT,
+	NETWORK_APPLY_REACTION_EVENT,
+	NETWORK_START_LOOT_ALIVE_EVENT,
+	NETWORK_SET_ENTITY_GHOST_WITH_PLAYER_EVENT,
+	NETWORK_COMBAT_DIRECTOR_EVENT,
+	NETWORK_MELEE_ARBITRATION_FAIL_EVENT,
+	NETWORK_PED_MOTIVATION_CHANGE_EVENT,
+	NETWORK_IGNITE_BOMB_EVENT,
+	NETWORK_PED_SHARED_TARGETING_EVENT,
+	NETWORK_REQUEST_COMBAT_GESTURE,
+	NETWORK_CRIME_REPORT_EVENT,
+	LIGHTNING_EVENT,
+	PED_TRIGGER_BULLET_FLINCH_EVENT,
+	PED_TRIGGER_EXPLOSION_FLINCH_EVENT,
+	NETWORK_PLAYER_WHISTLE_EVENT,
+	CONVERSATION_EVENT,
+	NETWORK_END_LOOT_EVENT,
+	NETWORK_PLAYER_SPURRING_EVENT,
+	NETWORK_PLAYER_HORSE_TAMING_CALLOUT_EVENT,
+	NETWORK_PICKUP_CARRIABLE_EVENT,
+	NETWORK_PLACE_CARRIABLE_ONTO_PARENT_EVENT,
+	PLAY_DEAD_EVENT,
+	NETWORK_PLAYER_HORSE_SHOT_EVENT,
+	ANIM_SCENE_ABORT_ENTITY_EVENT,
+	NETWORK_REQUEST_ASSET_DETACHMENT,
+	NETWORK_CARRIABLE_VEHICLE_STOW_START_EVENT,
+	NETWORK_CARRIABLE_VEHICLE_STOW_COMPLETE_EVENT,
+	NETWORK_BOLAS_HIT_EVENT,
+	NETWORK_WANTED_EVENT,
+	NETWORK_UPDATE_ANIMATED_VEHICLE_PROP_EVENT,
+	NETWORK_SET_CARRYING_FLAG_FOR_ENTITY,
+	NETWORK_BOUNTY_HUNT_EVENT,
+	NETWORK_DEBUG_REQUEST_ENTITY_POSITION,
+	NETWORK_REMOVE_PROP_OWNERSHIP,
+	NETWORK_DUMP_CARRIABLE_OFF_MOUNT_EVENT,
+	NETWORK_LEGENDARY_ANIMAL_SAMPLED_STAT_EVENT
 };
 
 static std::function<bool()> GetEventHandler(fx::ServerInstanceBase* instance, const fx::ClientSharedPtr& client, net::Buffer&& buffer)
@@ -4893,25 +4075,12 @@ static std::function<bool()> GetEventHandler(fx::ServerInstanceBase* instance, c
 	bool isReply = buffer.Read<uint8_t>(); // is reply
 	uint16_t eventType = buffer.Read<uint16_t>(); // event ID
 
-	if (Is2060() && eventType > 55) // patch for 1868+ game build as `NETWORK_AUDIO_BARK_EVENT` was added
-	{
-		eventType--;
-	}
-
 	switch(eventType)
 	{
-		case WEAPON_DAMAGE_EVENT: return GetHandler<CWeaponDamageEvent>(instance, client, std::move(buffer));
-		case RESPAWN_PLAYER_PED_EVENT: return GetHandler<CRespawnPlayerPedEvent>(instance, client, std::move(buffer));
-		case GIVE_WEAPON_EVENT: return GetHandler<CGiveWeaponEvent>(instance, client, std::move(buffer));
-		case REMOVE_WEAPON_EVENT: return GetHandler<CRemoveWeaponEvent>(instance, client, std::move(buffer));
-		case REMOVE_ALL_WEAPONS_EVENT: return GetHandler<CRemoveAllWeaponsEvent>(instance, client, std::move(buffer));
-		case VEHICLE_COMPONENT_CONTROL_EVENT: return GetHandler<CVehicleComponentControlEvent>(instance, client, std::move(buffer));
-		case FIRE_EVENT: return GetHandler<CFireEvent>(instance, client, std::move(buffer));
-		case EXPLOSION_EVENT: return GetHandler<CExplosionEvent>(instance, client, std::move(buffer));
-		case START_PROJECTILE_EVENT: return GetHandler<CStartProjectileEvent>(instance, client, std::move(buffer));
-		case NETWORK_CLEAR_PED_TASKS_EVENT: return GetHandler<CClearPedTasksEvent>(instance, client, std::move(buffer));
-		case NETWORK_PTFX_EVENT: return GetHandler<CNetworkPtFXEvent>(instance, client, std::move(buffer));
+		// REDM1S: todo
 	};
+
+	trace("Event type %d was triggered\n", eventType);
 
 	return {};
 }
@@ -4950,7 +4119,7 @@ static InitFunction initFunction([]()
 			{
 				g_oneSyncVar->GetHelper()->SetRawValue(g_bigMode ? fx::OneSyncState::On : fx::OneSyncState::Legacy);
 
-				console::PrintWarning("server", "`onesync_enabled` is deprecated. Please use `onesync %s` instead.\n", 
+				console::PrintWarning("server", "`onesync_enabled` is deprecated. Please use `onesync %s` instead.\n",
 					g_bigMode ? "on" : "legacy");
 			}
 			else if (!g_oneSyncEnabledVar->GetValue() && g_oneSyncVar->GetValue() != fx::OneSyncState::Off)
@@ -5098,7 +4267,7 @@ static InitFunction initFunction([]()
 			// process
 			auto [lock, clientData] = GetClientData(sgs.GetRef(), client);
 
-			
+
 			const auto& ref = clientData->frameStates[frameIndex];
 			const auto& [synced, deletions] = ref;
 
@@ -5180,7 +4349,7 @@ static InitFunction initFunction([]()
 				{
 					return;
 				}
-				
+
 				auto slotId = client->GetSlotId();
 				if (slotId == -1)
 				{
@@ -5189,7 +4358,7 @@ static InitFunction initFunction([]()
 
 				const uint8_t flags = buffer.Read<uint8_t>();
 				const auto thisFrame = buffer.Read<uint64_t>();
-				
+
 				if (flags & 1)
 				{
 					const auto firstMissingFrame = buffer.Read<uint64_t>();

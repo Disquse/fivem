@@ -163,17 +163,12 @@ struct CPlayerCameraNodeData
 
 struct CPlayerWantedAndLOSNodeData
 {
-	int fakeWantedLevel;
 	int wantedLevel;
 	int isWanted;
 	int isEvading;
 
 	int timeInPursuit;
 	int timeInPrevPursuit;
-
-	float wantedPositionX;
-	float wantedPositionY;
-	float wantedPositionZ;
 
 	inline CPlayerWantedAndLOSNodeData()
 		: timeInPursuit(-1), timeInPrevPursuit(-1)
@@ -345,13 +340,6 @@ struct CDynamicEntityGameStateNodeData
 	std::map<int, int> decors;
 };
 
-struct CTrainGameStateDataNodeData
-{
-	int engineCarriage;
-
-	int carriageIndex;
-};
-
 struct CPlayerGameStateNodeData
 {
 	int playerTeam;
@@ -422,27 +410,9 @@ public:
 
 	virtual CPlayerCameraNodeData* GetPlayerCamera() = 0;
 
-	virtual CPlayerWantedAndLOSNodeData* GetPlayerWantedAndLOS() = 0;
-
 	virtual CPedGameStateNodeData* GetPedGameState() = 0;
 
-	virtual uint64_t GetPedGameStateFrameIndex() = 0;
-
 	virtual CVehicleGameStateNodeData* GetVehicleGameState() = 0;
-
-	virtual CVehicleAppearanceNodeData* GetVehicleAppearance() = 0;
-
-	virtual CPlaneGameStateDataNodeData* GetPlaneGameState() = 0;
-
-	virtual CPlaneControlDataNodeData* GetPlaneControl() = 0;
-
-	virtual CTrainGameStateDataNodeData* GetTrainState() = 0;
-
-	virtual CPlayerGameStateNodeData* GetPlayerGameState() = 0;
-
-	virtual CPedHealthNodeData* GetPedHealth() = 0;
-
-	virtual CVehicleHealthNodeData* GetVehicleHealth() = 0;
 
 	virtual CPedOrientationNodeData* GetPedOrientation() = 0;
 
@@ -467,20 +437,36 @@ public:
 
 enum class NetObjEntityType
 {
-	Automobile = 0,
-	Bike = 1,
-	Boat = 2,
-	Door = 3,
-	Heli = 4,
-	Object = 5,
-	Ped = 6,
-	Pickup = 7,
-	PickupPlacement = 8,
-	Plane = 9,
-	Submarine = 10,
-	Player = 11,
-	Trailer = 12,
-	Train = 13
+	Animal = 0,
+	Automobile = 1,
+	Bike = 2,
+	Boat = 3,
+	Door = 4,
+	Heli = 5,
+	Object = 6,
+	Ped = 7,
+	Pickup = 8,
+	PickupPlacement = 9,
+	Plane = 10,
+	Submarine = 11,
+	Player = 12,
+	Trailer = 13,
+	Train = 14,
+	DraftVeh = 15,
+	StatsTracker = 16,
+	PropSet = 17,
+	AnimScene = 18,
+	GroupScenario = 19,
+	Herd = 20,
+	Horse = 21,
+	WorldState = 22,
+	WorldProjectile = 23,
+	Incident = 24,
+	Guardzone = 25,
+	PedGroup = 26,
+	CombatDirector = 27,
+	PedSharedTargeting = 28,
+	Persistent = 29,
 };
 
 struct SyncEntityState

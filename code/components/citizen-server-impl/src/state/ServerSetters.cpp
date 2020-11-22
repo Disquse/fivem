@@ -84,7 +84,8 @@ void SetupHeading(const std::shared_ptr<TTree>& tree, float heading)
 std::shared_ptr<sync::SyncTreeBase> MakeAutomobile(uint32_t model, float posX, float posY, float posZ, uint32_t resourceHash, float heading = 0.0f)
 {
 	auto tree = std::make_shared<sync::CAutomobileSyncTree>();
-	
+
+#if 0
 	SetupNode(tree, [model](sync::CVehicleCreationDataNode& cdn)
 	{
 		cdn.m_model = model;
@@ -111,6 +112,7 @@ std::shared_ptr<sync::SyncTreeBase> MakeAutomobile(uint32_t model, float posX, f
 		cdn.m_scriptHash = resourceHash;
 		cdn.m_timestamp = msec().count();
 	});
+#endif
 
 	return tree;
 }
@@ -119,6 +121,7 @@ std::shared_ptr<sync::SyncTreeBase> MakePed(uint32_t model, float posX, float po
 {
 	auto tree = std::make_shared<sync::CPedSyncTree>();
 
+#if 0
 	SetupNode(tree, [model](sync::CPedCreationDataNode& cdn)
 	{
 		cdn.m_model = model;
@@ -155,6 +158,7 @@ std::shared_ptr<sync::SyncTreeBase> MakePed(uint32_t model, float posX, float po
 		cdn.m_scriptHash = resourceHash;
 		cdn.m_timestamp = msec().count();
 	});
+#endif
 
 	return tree;
 }
@@ -163,6 +167,7 @@ std::shared_ptr<sync::SyncTreeBase> MakeObject(uint32_t model, float posX, float
 {
 	auto tree = std::make_shared<sync::CObjectSyncTree>();
 
+#if 0
 	SetupNode(tree, [model, dynamic](sync::CObjectCreationDataNode& cdn)
 	{
 		cdn.m_model = model;
@@ -189,6 +194,7 @@ std::shared_ptr<sync::SyncTreeBase> MakeObject(uint32_t model, float posX, float
 		cdn.m_scriptHash = resourceHash;
 		cdn.m_timestamp = msec().count();
 	});
+#endif
 
 	return tree;
 }
@@ -257,7 +263,7 @@ static InitFunction initFunction([]()
 {
 	fx::ServerInstanceBase::OnServerCreate.Connect([](fx::ServerInstanceBase* ref)
 	{
-		fx::ScriptEngine::RegisterNativeHandler("CREATE_AUTOMOBILE", [=](fx::ScriptContext& ctx) 
+		fx::ScriptEngine::RegisterNativeHandler("CREATE_AUTOMOBILE", [=](fx::ScriptContext& ctx)
 		{
 			uint32_t resourceHash = 0;
 

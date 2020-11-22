@@ -7,6 +7,8 @@ std::shared_ptr<sync::SyncTreeBase> MakeSyncTree(sync::NetObjEntityType objectTy
 {
 	switch (objectType)
 	{
+	case sync::NetObjEntityType::Animal:
+		return std::make_shared<sync::CAnimalSyncTree>();
 	case sync::NetObjEntityType::Automobile:
 		return std::make_shared<sync::CAutomobileSyncTree>();
 	case sync::NetObjEntityType::Bike:
@@ -35,6 +37,36 @@ std::shared_ptr<sync::SyncTreeBase> MakeSyncTree(sync::NetObjEntityType objectTy
 		return std::make_shared<sync::CAutomobileSyncTree>();
 	case sync::NetObjEntityType::Train:
 		return std::make_shared<sync::CTrainSyncTree>();
+	case sync::NetObjEntityType::DraftVeh:
+		return std::make_shared<sync::CDraftVehSyncTree>();
+	case sync::NetObjEntityType::StatsTracker:
+		return std::make_shared<sync::CStatsTrackerSyncTree>();
+	case sync::NetObjEntityType::PropSet:
+		return std::make_shared<sync::CPropSetSyncTree>();
+	case sync::NetObjEntityType::AnimScene:
+		return std::make_shared<sync::CAnimSceneSyncTree>();
+	case sync::NetObjEntityType::GroupScenario:
+		return std::make_shared<sync::CGroupScenarioSyncTree>();
+	case sync::NetObjEntityType::Herd:
+		return std::make_shared<sync::CHerdSyncTree>();
+	case sync::NetObjEntityType::Horse:
+		return std::make_shared<sync::CHorseSyncTree>();
+	case sync::NetObjEntityType::WorldState:
+		return std::make_shared<sync::CWorldStateSyncTree>();
+	case sync::NetObjEntityType::WorldProjectile:
+		return std::make_shared<sync::CWorldProjectileSyncTree>();
+	case sync::NetObjEntityType::Incident:
+		return std::make_shared<sync::CIncidentSyncTree>();
+	case sync::NetObjEntityType::Guardzone:
+		return std::make_shared<sync::CGuardzoneSyncTree>();
+	case sync::NetObjEntityType::PedGroup:
+		return std::make_shared<sync::CPedGroupSyncTree>();
+	case sync::NetObjEntityType::CombatDirector:
+		return std::make_shared<sync::CCombatDirectorSyncTree>();
+	case sync::NetObjEntityType::PedSharedTargeting:
+		return std::make_shared<sync::CPedSharedTargetingSyncTree>();
+	case sync::NetObjEntityType::Persistent:
+		return std::make_shared<sync::CPersistentSyncTree>();
 	}
 
 	return {};
