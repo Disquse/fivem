@@ -67,7 +67,7 @@ public:
 
 	inline netBlender* GetBlender()
 	{
-		return *(netBlender**)((uintptr_t)this + 0x118);
+		return *(netBlender**)((uintptr_t)this + 96);
 	}
 
 	virtual ~netObject() = 0;
@@ -112,45 +112,50 @@ public:
 	virtual void m_130() = 0; // 40
 	virtual void m_138() = 0;
 	virtual void m_140() = 0;
-	// virtual void m_148() = 0; // REDM1S: not sure where padding was added, this is for Update calls
-	virtual bool IsInScope(void* player, void* unk) = 0;
-	virtual void ManageUpdateLevel() = 0; // REDM1S: probably "MainThreadUpdate" should on this place
+	virtual bool IsInScope(void* player) = 0;
+	virtual void ManageUpdateLevel() = 0;
 	virtual void MainThreadUpdate() = 0;
 	virtual void DependencyThreadUpdate() = 0;
 	virtual void PostDependencyThreadUpdate() = 0;
 	virtual void StartSynchronising() = 0;
-	virtual void StopSynchronising() = 0; // 50
-	virtual bool CanClone(void* player, void* unk) = 0;
-	virtual bool CanDelete() = 0; // REDM1S: moved from *before CanCreateWithNoGameObject*
+	virtual void StopSynchronising() = 0;
+	virtual bool CanClone(void* player, void* unk) = 0; // 50
 	virtual bool CanSync(void* player) = 0;
+	virtual void m_910() = 0;
 	virtual bool CanSynchronise(bool, int*) = 0;
+	virtual bool CanStopSynchronize() = 0;
+	virtual bool CanDelete() = 0;
 	virtual bool CanCreateWithNoGameObject() = 0;
 	virtual bool CanPassControlWithNoGameObject() = 0;
 	virtual bool CanReassignWithNoGameObject() = 0;
 	virtual bool m_158(void* player, int type, int* outReason) = 0; // CanPassControl
-	virtual bool CanAcceptControl(void* player, int type, int* outReason) = 0;
-	virtual bool m_168(int* outReason) = 0; // CanBlend 60
+	virtual bool CanAcceptControl(void* player, int type, int* outReason) = 0; // 60
+	virtual bool m_168(int* outReason) = 0; // CanBlend
 	virtual bool NetworkBlenderIsOverridden(void* unk) = 0;
 	virtual bool NetworkAttachmentIsOverridden() = 0;
 	virtual void ChangeOwner(void* player, int migrationType) = 0;
 	virtual void OnRegistered() = 0;
 	virtual void OnUnregistered() = 0;
+	virtual bool NeedsReassigning() = 0;
+	virtual void OnReassigned() = 0;
 	virtual void OnCloning(void* player) = 0;
-	virtual int CalcReassignPriority() = 0;
+	virtual int CalcReassignPriority() = 0; // 70
 	virtual void PlayerHasJoined(void* player) = 0;
 	virtual void PlayerHasLeft(void* player) = 0;
-	virtual void m_1C0() = 0; // PostCreate 70
+	virtual void m_1C0() = 0; // PostCreate
 	virtual void PreSync() = 0;
 	virtual void m_1D0() = 0; // PostSync
 	virtual void PostMigrate(int migrationType) = 0;
+	virtual void SetBlenderTimestamp(uint32_t) = 0;
 	virtual bool CheckPlayerHasAuthorityOverObject(void*) = 0;
-	virtual void m_250() = 0;
-	virtual void ResetProximityControlTimer() = 0;
-	virtual bool ShouldTeleportOnInitialCreation() = 0;
+	virtual void ResetProximityControlTimer() = 0; // starting from here, order are unknown
+	virtual bool ShouldTeleportOnInitialCreation() = 0; // 80
 	virtual void ShouldFadeInOnInitialCreation() = 0;
 	virtual void DisplayNetworkInfo() = 0;
-	virtual int GetNumPlayersToUpdatePerBatch() = 0; // 80
+	virtual int GetNumPlayersToUpdatePerBatch() = 0;
 	virtual void LogScopeReason(bool toggle, void* player, void* unk) = 0;
+
+	// REDM1S: there's also a sub with entity type script (aka AUTOMOBILE/SCRIPTED_AUTOMOBILE), might be useful for logs
 
 	inline uint16_t GetObjectId()
 	{

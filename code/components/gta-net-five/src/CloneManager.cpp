@@ -1957,7 +1957,7 @@ void CloneManagerLocal::Update()
 #ifdef GTA_FIVE
 			clone.second->Update();
 #elif IS_RDR3
-			// REDM1S: figure out weird vtable order
+			// REDM1S: it seems that `DependencyThreadUpdate` calls post stuff itself when needed, figure out
 			clone.second->MainThreadUpdate();
 			clone.second->DependencyThreadUpdate();
 			clone.second->PostDependencyThreadUpdate();

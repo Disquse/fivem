@@ -50,11 +50,11 @@ public:
 
 	virtual void* InitialiseTree() = 0;
 
-	virtual void Write(int flags, int objFlags, netObject* object, datBitBuffer* buffer, uint32_t time, void* logger, uint8_t targetPlayer, void* outNull) = 0;
-
-	virtual void m_10() = 0;
+	virtual void Write(uint32_t flags, uint32_t objFlags, netObject* object, datBitBuffer* buffer, uint64_t time, uint8_t targetPlayer, uint64_t* outNull, void* null) = 0;
 
 	virtual void ApplyToObject(netObject* object, void*) = 0;
+
+	virtual void m_10() = 0;
 
 	virtual void m_18() = 0;
 

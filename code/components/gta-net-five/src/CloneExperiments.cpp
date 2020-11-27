@@ -2721,11 +2721,12 @@ static HookFunction hookFunction2([]()
 		auto location = hook::get_pattern<char>("48 89 44 24 20 E8 ? ? ? ? 84 C0 0F 95 C0 48 83 C4 58", -0x3C);
 		hook::set_call(&g_origWriteDataNode, location + 0x41);
 #elif IS_RDR3
-		auto location = hook::get_pattern<char>("49 89 43 C8 E8 ? ? ? ? 84 C0 0F 95 C0 48 83 C4 58", -0x3E);
-		hook::set_call(&g_origWriteDataNode, location + 0x42);
+		// REDM1S: this hook breaks experimental cloning natives!
+		//auto location = hook::get_pattern<char>("49 89 43 C8 E8 ? ? ? ? 84 C0 0F 95 C0 48 83 C4 58", -0x3E);
+		//hook::set_call(&g_origWriteDataNode, location + 0x42);
 #endif
 
-		hook::jump(location, WriteDataNodeStub);
+		//hook::jump(location, WriteDataNodeStub);
 	}
 
 	{
@@ -3594,8 +3595,8 @@ static InitFunction initFunction([]()
 		rage::datBitBuffer buffer(bluh, sizeof(bluh));
 
 		auto st = netObj->GetSyncTree();
-		st = rage::netSyncTree::GetForType(NetObjEntityType::Ped);
-		st->WriteTreeCfx(1, 0, netObj, &buffer, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp(), nullptr, 31, nullptr, nullptr);
+		st = rage::netSyncTree::GetForType((NetObjEntityType)netObj->GetObjectType());
+		st->Write(1, 0, netObj, &buffer, 0, 31, nullptr, nullptr);
 
 		static char base64Buffer[2000];
 		size_t outLength = sizeof(base64Buffer);
@@ -3632,8 +3633,8 @@ static InitFunction initFunction([]()
 		rage::datBitBuffer buffer(bluh, sizeof(bluh));
 
 		auto st = netObj->GetSyncTree();
-		st = rage::netSyncTree::GetForType(NetObjEntityType::Ped);
-		st->WriteTreeCfx(2, 0, netObj, &buffer, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp(), nullptr, 31, nullptr, nullptr);
+		st = rage::netSyncTree::GetForType((NetObjEntityType)netObj->GetObjectType());
+		st->Write(2, 0, netObj, &buffer, 0, 31, nullptr, nullptr);
 
 		static char base64Buffer[2000];
 
@@ -3662,6 +3663,12 @@ static InitFunction initFunction([]()
 		{
 			objType = NetObjEntityType::Automobile;
 		}
+#ifdef IS_RDR3
+		else if (strcmp(objectType, "draftveh") == 0)
+		{
+			objType = NetObjEntityType::DraftVeh;
+		}
+#endif
 		else if (strcmp(objectType, "player") == 0)
 		{
 			objType = NetObjEntityType::Ped; // until we make native players
@@ -3706,7 +3713,23 @@ static InitFunction initFunction([]()
 		st->ApplyToObject(obj, nullptr);
 		rage::netObjectMgr::GetInstance()->RegisterNetworkObject(obj);
 
+		// create a blender, if not existent
+		if (!obj->GetBlender())
+		{
+			trace("Created net blender\n");
+			obj->CreateNetBlender();
+		}
+
+		if (!obj->GetBlender())
+		{
+			trace("No blender even after creation, that's bad!\n");
+
+			context.SetResult(-1);
+			return;
+		}
+
 		obj->GetBlender()->SetTimestamp(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
+		//obj->SetBlenderTimestamp(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
 
 		obj->m_1D0();
 
@@ -3740,12 +3763,19 @@ static InitFunction initFunction([]()
 
 		auto st = obj->GetSyncTree();
 
-		st->ReadFromBuffer(1, 0, &buf, nullptr);
+		st->ReadFromBuffer(2, 0, &buf, nullptr);
 
 		free(dec);
 
+		if (!obj->GetBlender())
+		{
+			trace("LOAD_CLONE_SYNC: no net blender\n");
+			return;
+		}
+
 		obj->GetBlender()->SetTimestamp(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
-		obj->GetBlender()->m_28();
+		//obj->SetBlenderTimestamp(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
+		obj->GetBlender()->m_18();
 
 		st->ApplyToObject(obj, nullptr);
 
@@ -3787,7 +3817,7 @@ static InitFunction initFunction([]()
 		rage::datBitBuffer buffer(bluh, sizeof(bluh));
 
 		auto st = netObj->GetSyncTree();
-		st->WriteTreeCfx(1, 0, netObj, &buffer, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp(), nullptr, 31, nullptr, nullptr);
+		st->Write(1, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp(), netObj, &buffer, 0, 31, nullptr, nullptr);
 
 		FILE* f = _wfopen(MakeRelativeCitPath(L"tree.bin").c_str(), L"wb");
 		fwrite(buffer.m_data, 1, (buffer.m_curBit / 8) + 1, f);
@@ -3811,11 +3841,11 @@ static InitFunction initFunction([]()
 		rage::datBitBuffer buf(data, len);
 		buf.m_f1C = 1;
 
-		auto st = rage::netSyncTree::GetForType(NetObjEntityType::Automobile);
+		auto st = rage::netSyncTree::GetForType(NetObjEntityType::Ped);
 
 		st->ReadFromBuffer(1, 0, &buf, nullptr);
 
-		auto obj = rage::CreateCloneObject(NetObjEntityType::Automobile, rand(), 31, 0, 32);
+		auto obj = rage::CreateCloneObject(NetObjEntityType::Ped, rand(), 31, 0, 32);
 
 		if (!st->CanApplyToObject(obj))
 		{
@@ -3829,6 +3859,7 @@ static InitFunction initFunction([]()
 		rage::netObjectMgr::GetInstance()->RegisterNetworkObject(obj);
 
 		obj->GetBlender()->SetTimestamp(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
+		//obj->SetBlenderTimestamp(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
 
 		obj->m_1D0();
 
