@@ -52,11 +52,11 @@ public:
 
 	virtual void Write(uint32_t flags, uint32_t objFlags, netObject* object, datBitBuffer* buffer, uint64_t time, uint8_t targetPlayer, uint64_t* outNull, void* null) = 0;
 
+	virtual bool m_18(netObject* object, uint32_t unk) = 0;
+
 	virtual void ApplyToObject(netObject* object, void*) = 0;
 
 	virtual void m_10() = 0;
-
-	virtual void m_18() = 0;
 
 	virtual void m_20(uint32_t, uint32_t, rage::datBitBuffer*, void*) = 0;
 
