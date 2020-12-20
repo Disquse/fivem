@@ -69,7 +69,11 @@ public:
 
 static hook::thiscall_stub<void(netPlayerMgrBase*, CNetGamePlayer*)> _netPlayerMgrBase_UpdatePlayerListsForPlayer([]
 {
+#ifdef GTA_FIVE
 	return hook::get_call(hook::get_pattern("FF 57 30 48 8B D6 49 8B CE E8", 9));
+#elif IS_RDR3
+	return hook::get_call(hook::get_pattern("41 B9 FF 00 00 00 4D 8B C5", 21));
+#endif
 });
 
 void netPlayerMgrBase::UpdatePlayerListsForPlayer(CNetGamePlayer* player)
@@ -254,8 +258,11 @@ static bool IsNetworkPlayerConnected(int index)
 	return (GetPlayerByIndex(index) != nullptr);
 }
 
-//int g_physIdx = 1;
+#ifdef GTA_FIVE
 int g_physIdx = 42;
+#elif IS_RDR3
+int g_physIdx = 1;
+#endif
 
 #ifdef GTA_FIVE
 static hook::cdecl_stub<void(void*)> _npCtor([]()
@@ -1412,7 +1419,7 @@ static HookFunction hookFunction([]()
 #ifdef GTA_FIVE
 	hook::put<uint8_t>(hook::get_pattern("48 8D 05 ? ? ? ? BE 1F 00 00 00 48 8B F9", 8), 128);
 #elif IS_RDR3
-	// hook::put<uint8_t>(hook::get_pattern("48 8D 05 ? ? ? ? BF 20 00 00 00 48 89 01", 8), 128);
+	//hook::put<uint8_t>(hook::get_pattern("48 8D 05 ? ? ? ? BF 20 00 00 00 48 89 01", 8), 128);
 #endif
 
 	// 1604 unused, netobjmgr alloc size, temp dbg
@@ -1521,17 +1528,8 @@ static HookFunction hookFunction([]()
 		hook::call(location, JoinPhysicalPlayerOnHost);
 	}
 
-	// REDM1S: remove debug code
 	{
-#ifdef IS_RDR3
-		auto location = (void*)0x1423759E8;
-		hook::set_call(&g_origSetPhysicalPlayerIndex, location);
-		hook::call(location, SetPhysicalPlayerIndex);
-#endif
-	}
-
-	{
-#ifdef GTA_GIVE
+#ifdef GTA_FIVE
 		if (!xbr::IsGameBuildOrGreater<2060>())
 		{
 			auto match = hook::pattern("80 F9 20 73 13 48 8B").count(2);
@@ -1596,13 +1594,6 @@ static HookFunction hookFunction([]()
 #endif
 
 #ifdef GTA_FIVE
-	MH_CreateHook(hook::get_pattern("78 18 4C 8B 05", -10), GetScenarioTaskScenario, (void**)&g_origGetScenarioTaskScenario);
-
-	// #TODO1S: fix player/ped groups so we don't need this workaround anymore
-	MH_CreateHook(hook::get_call(hook::get_pattern("48 83 C1 10 48 C1 E0 06 48 03 C8 E8", -21)), GetNetObjPlayerGroup, (void**)&g_origGetNetObjPlayerGroup);
-#endif
-
-#ifdef GTA_FIVE
 	MH_CreateHook(hook::get_pattern("4C 8B F9 74 7D", -0x2B), netObjectMgr__CountObjects, (void**)&g_origCountObjects);
 #elif IS_RDR3
 	MH_CreateHook(hook::get_pattern("F6 86 D8 08 00 00 01 74 ? 44 8A 05", -0x3B), netObjectMgr__CountObjects, (void**)&g_origCountObjects);
@@ -1615,8 +1606,15 @@ static HookFunction hookFunction([]()
 #endif
 
 #ifdef GTA_FIVE
+	MH_CreateHook(hook::get_pattern("78 18 4C 8B 05", -10), GetScenarioTaskScenario, (void**)&g_origGetScenarioTaskScenario);
+
+	// #TODO1S: fix player/ped groups so we don't need this workaround anymore
+	MH_CreateHook(hook::get_call(hook::get_pattern("48 83 C1 10 48 C1 E0 06 48 03 C8 E8", -21)), GetNetObjPlayerGroup, (void**)&g_origGetNetObjPlayerGroup);
+#endif
+
+#ifdef GTA_FIVE
 	MH_CreateHook(hook::get_pattern("45 8D 65 20 C6 81 ? ? 00 00 01 48 8D 59 08", -0x2F), ObjectManager_End, (void**)&g_origObjectManager_End);
-	MH_CreateHook(hook::get_call(hook::get_call(hook::get_pattern<char>("48 8D 05 ? ? ? ? 48 8B D9 48 89 01 E8 ? ? ? ? 84 C0 74 08 48 8B ? E8", -0x19) + 0x32)), PlayerManager_End, (void**)&g_origPlayerManager_End);
+	MH_CreateHook(hook::get_call(hook::get_call(hook::get_pattern<char>("48 8D 05 ? ? ? ? 48 8B D9 48 89 01 E8 ? ? ? ? 84 C0 74 08 48 8B CB E8", -0x19) + 0x32)), PlayerManager_End, (void**)&g_origPlayerManager_End);
 #elif IS_RDR3
 	MH_CreateHook(hook::get_pattern("C6 81 ? ? ? ? 01 48 8B CD E8 ? ? ? ? 45 8D 67", -0x36), ObjectManager_End, (void**)&g_origObjectManager_End);
 	MH_CreateHook(hook::get_call(hook::get_call(hook::get_pattern<char>("48 8D 05 ? ? ? ? 48 8B F9 48 89 01 E8 ? ? ? ? 84 C0 74 08 48 8B ? E8", -0xF) + 0x28)), PlayerManager_End, (void**)&g_origPlayerManager_End);
@@ -1679,7 +1677,10 @@ static HookFunction hookFunction([]()
 	hook::nop(hook::get_pattern("8B 44 84 58 0F A3 D0 73", 7), 2);
 #endif
 
+	// REDM1S: resolve crashes I guess, don't remember why there's return
+#ifdef IS_RDR3
 	return;
+#endif
 
 	// always write up-to-date data to nodes, not the cached data from syncdata
 	{
@@ -2726,7 +2727,10 @@ static HookFunction hookFunction2([]()
 		//hook::set_call(&g_origWriteDataNode, location + 0x42);
 #endif
 
-		//hook::jump(location, WriteDataNodeStub);
+		// REDM1S: return in RDR3 when ^ will be fixed.
+#ifdef GTA_FIVE
+		hook::jump(location, WriteDataNodeStub);
+#endif
 	}
 
 	{
@@ -3505,7 +3509,9 @@ static std::map<int, ObjectData> trackedObjects;
 
 #include <lz4.h>
 
+#ifdef GTA_FIVE
 extern void ArrayManager_Update();
+#endif
 
 static InitFunction initFunction([]()
 {
@@ -3533,7 +3539,10 @@ static InitFunction initFunction([]()
 			return;
 		}
 
+#ifdef GTA_FIVE
 		ArrayManager_Update();
+#endif
+
 		EventManager_Update();
 		TheClones->Update();
 	});

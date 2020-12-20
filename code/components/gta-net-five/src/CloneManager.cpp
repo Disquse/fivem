@@ -48,7 +48,9 @@ void ObjectIds_AddObjectId(int objectId);
 void ObjectIds_StealObjectId(int objectId);
 void ObjectIds_ConfirmObjectId(int objectId);
 
+#ifdef IS_RDR3
 bool EnsurePlayer31();
+#endif
 
 void AssociateSyncTree(int objectId, rage::netSyncTree* syncTree);
 
@@ -529,11 +531,14 @@ void CloneManagerLocal::ProcessSyncAck(uint16_t objId, uint16_t uniqifier)
 			auto syncTree = netObj->GetSyncTree();
 			syncTree->AckCfx(netObj, m_ackTimestamp);
 
-			if (netObj->m_20() && EnsurePlayer31())
+#ifdef GTA_FIVE
+			// REDM1S: crashes, it seems a valid player check was changed and now it's less realible
+			//if (netObj->m_20() && EnsurePlayer31())
+			if (netObj->m_20())
 			{
-				// REDM1S: crashes, it seems a valid player check was changed and now it's less realible
-				//_processAck(syncTree, netObj, 31, 0 /* seq? */, m_ackTimestamp, 0xFFFFFFFF);
+				_processAck(syncTree, netObj, 31, 0 /* seq? */, m_ackTimestamp, 0xFFFFFFFF);
 			}
+#endif
 		}
 	}
 }

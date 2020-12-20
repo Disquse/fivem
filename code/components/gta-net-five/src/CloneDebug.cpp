@@ -235,7 +235,7 @@ static std::string GetClassTypeName(void* ptr)
 	std::string name;
 
 #ifdef GTA_FIVE
-	name = typeid(*ptr).name();
+	name = typeid(*(uint64_t*)ptr).name();
 	name = name.substr(6);
 #elif IS_RDR3
 	name = fmt::sprintf("%016llx", *(uint64_t*)ptr);
@@ -298,7 +298,11 @@ static void RenderNetObjectTree()
 				{
 					try
 					{
+#ifdef GTA_FIVE
+						std::string objectName = GetClassTypeName(object);
+#elif IS_RDR3
 						std::string objectName = GetNetObjEntityName(object->GetObjectType());
+#endif
 
 						if (ImGui::TreeNodeEx(object,
 							ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ((g_curNetObjectSelection == object) ? ImGuiTreeNodeFlags_Selected : 0),
@@ -915,7 +919,10 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 
 					if (state.pass == 2)
 					{
+						// REDM1S: bring back!
+#ifdef GTA_FIVE
 						buffer->WriteUns(length, sizeLength);
+#endif
 					}
 				}
 
