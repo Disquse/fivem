@@ -1554,6 +1554,9 @@ struct SyncTree : public SyncTreeBase
 			state.objType = state.buffer.ReadBit();
 		}
 
+		// REDM1S: only RDR3
+		state.buffer.ReadBit();
+
 		root.Parse(state);
 	}
 
@@ -1569,6 +1572,9 @@ struct SyncTree : public SyncTreeBase
 
 			state.buffer.WriteBit(1);
 		}
+
+		// REDM1S: only RDR3
+		state.buffer.WriteBit(0);
 
 		return root.Unparse(state);
 	}

@@ -1148,10 +1148,7 @@ bool CloneManagerLocal::HandleCloneCreate(const msgClone& msg)
 	auto v18 = (*(__int64(__fastcall**)(void*))(*(uint64_t*)syncTree + 0x68i64))(syncTree);
 	if (v18)
 	{
-		trace("yes v18 = %d\n", (uint64_t)v18);
-
 		auto maybeYes = (*(unsigned __int8(__fastcall**)(void*))(*(uint64_t*)v18 + 0xE8i64))((void*)v18);
-		trace("maybeYes = %d\n", maybeYes);
 	}
 #endif
 
