@@ -16,13 +16,13 @@
 #endif
 
 #define DECLARE_ACCESSOR(x) \
-	decltype(impl.m1207.x)& x() \
+	decltype(impl.m1311.x)& x() \
 	{ \
-		return (impl.m1207.x); \
+		return (impl.m1311.x); \
 	} \
-	const decltype(impl.m1207.x)& x() const \
+	const decltype(impl.m1311.x)& x() const \
 	{ \
-		return (impl.m1207.x); \
+		return (impl.m1311.x); \
 	}
 
 namespace rage
@@ -75,19 +75,31 @@ private:
 		uint8_t pad[16]; // +8
 		uint8_t activePlayerIndex; // +24
 		uint8_t physicalPlayerIndex; // +25
-		char pad2[278]; // +26;
-		void* playerInfo; // +304
+		char pad2[270]; // +26;
+		void* entity; // +296
 	};
 
 	union
 	{
-		Impl m1207;
+		Impl m1311;
 	} impl;
+
+public:
+	void* GetPlayerInfo()
+	{
+		auto entity = *(uint64_t*)(impl.m1311.entity);
+
+		if (entity)
+		{
+			return (void*)(entity + 304);
+		}
+
+		return nullptr;
+	}
 
 public:
 	DECLARE_ACCESSOR(activePlayerIndex);
 	DECLARE_ACCESSOR(physicalPlayerIndex);
-	DECLARE_ACCESSOR(playerInfo);
 };
 
 class CNetworkPlayerMgr

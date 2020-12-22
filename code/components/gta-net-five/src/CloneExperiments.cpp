@@ -369,7 +369,7 @@ namespace sync
 	void TempHackMakePhysicalPlayer(uint16_t clientId, int idx = -1)
 	{
 		void* fakeInAddr = calloc(256, 1);
-		// void* fakeFakeData = calloc(256, 1);
+		void* fakeFakeData = calloc(256, 1);
 
 		rlGamerInfo* inAddr = (rlGamerInfo*)fakeInAddr;
 		inAddr->peerAddress.localAddr.ip.addr = clientId ^ 0xFEED;
@@ -380,7 +380,7 @@ namespace sync
 		void* phys = calloc(1024, 1);
 		_pCtor(phys);
 
-		auto player = g_playerMgr->AddPlayer(fakeInAddr, 0, phys, nullptr);
+		auto player = g_playerMgr->AddPlayer(fakeInAddr, 0, phys, &fakeFakeData);
 		g_tempRemotePlayer = player;
 
 		if (idx == -1)
@@ -591,7 +591,7 @@ CNetGamePlayer* netObject__GetPlayerOwner(rage::netObject* object)
 		auto player = g_playersByNetId[TheClones->GetClientId(object)];
 
 		// FIXME: figure out why bad playerinfos occur
-		if (player != nullptr && player->playerInfo() != nullptr)
+		if (player != nullptr && player->GetPlayerInfo() != nullptr)
 		{
 			return player;
 		}
@@ -625,7 +625,7 @@ static CNetGamePlayer* netObject__GetPendingPlayerOwner(rage::netObject* object)
 	{
 		auto player = g_playersByNetId[TheClones->GetPendingClientId(object)];
 
-		if (player != nullptr && player->playerInfo() != nullptr)
+		if (player != nullptr && player->GetPlayerInfo() != nullptr)
 		{
 			return player;
 		}
@@ -715,9 +715,7 @@ static void NetLogStub_DoLog(void*, const char* type, const char* fmt, ...)
 }
 #endif
 
-static CNetGamePlayer*(*g_origAllocateNetPlayer)(void*);
-
-static hook::cdecl_stub<CNetGamePlayer* (void*)> _netPlayerCtor([]()
+static hook::cdecl_stub<CNetGamePlayer*(void*)> _netPlayerCtor([]()
 {
 #ifdef GTA_FIVE
 	return hook::get_pattern("83 8B ? 00 00 00 FF 33 F6", -0x17);
@@ -726,9 +724,16 @@ static hook::cdecl_stub<CNetGamePlayer* (void*)> _netPlayerCtor([]()
 #endif
 });
 
+static CNetGamePlayer*(*g_origAllocateNetPlayer)(void*);
+
 static CNetGamePlayer* AllocateNetPlayer(void* mgr)
 {
-	if (!icgi->OneSyncEnabled)
+	// REDM1S: crashes if you try to allocate fake player for local player
+	if (!icgi->OneSyncEnabled
+#ifdef IS_RDR3
+		|| mgr != nullptr
+#endif
+	)
 	{
 		return g_origAllocateNetPlayer(mgr);
 	}
@@ -805,6 +810,20 @@ static void PassObjectControlStub(CNetGamePlayer* player, rage::netObject* netOb
 
 	//player->physicalPlayerIndex = lastIndex;
 }
+
+#ifdef IS_RDR3
+static void*(*g_origSetUnknownArrayIndex)(rage::netPlayer* player, uint8_t index);
+
+static void* SetUnknownArrayIndex(rage::netPlayer* player, uint8_t index)
+{
+	if (!icgi->OneSyncEnabled)
+	{
+		return g_origSetUnknownArrayIndex(player, index);
+	}
+
+	return nullptr;
+}
+#endif
 
 static void(*g_origSetOwner)(rage::netObject* object, CNetGamePlayer* newOwner);
 
@@ -1354,8 +1373,6 @@ static void UnkEventMgr(void* mgr, void* ply)
 	}
 }
 
-// REDM1S: probably safe to use, test
-#ifdef GTA_FIVE
 static void*(*g_origNetworkObjectMgrCtor)(void*, void*);
 
 static void* NetworkObjectMgrCtorStub(void* mgr, void* bw)
@@ -1373,7 +1390,6 @@ static void* NetworkObjectMgrCtorStub(void* mgr, void* bw)
 
 	return mgr;
 }
-#endif
 
 static HookFunction hookFunction([]()
 {
@@ -1433,9 +1449,14 @@ static HookFunction hookFunction([]()
 	MH_CreateHook(hook::get_pattern("4C 8B F1 41 BD 05", -0x22), PassObjectControlStub, (void**)&g_origPassObjectControl);
 	MH_CreateHook(hook::get_pattern("8A 41 49 4C 8B F2 48 8B", -0x10), SetOwnerStub, (void**)&g_origSetOwner);
 #elif IS_RDR3
-	// MH_CreateHook(hook::get_pattern("48 8B D9 E8 ? ? ? ? 33 D2 66", -0x6), NetworkObjectMgrCtorStub, (void**)&g_origNetworkObjectMgrCtor);
+	MH_CreateHook(hook::get_pattern("48 8B D9 E8 ? ? ? ? 33 D2 66", -0x6), NetworkObjectMgrCtorStub, (void**)&g_origNetworkObjectMgrCtor);
 	MH_CreateHook(hook::get_pattern("83 FE 01 41 0F 9F C4 48 85 DB 74", -0x38), PassObjectControlStub, (void**)&g_origPassObjectControl);
 	MH_CreateHook(hook::get_pattern("80 79 ? ? 48 8B F2 48 8B F9 73", -0xF), SetOwnerStub, (void**)&g_origSetOwner);
+#endif
+
+#ifdef IS_RDR3
+	// unknown player related array in RDR3
+	MH_CreateHook(hook::get_pattern("84 C0 74 ? 88 1D ? ? ? ? EB", -0x14), SetUnknownArrayIndex, (void**)&g_origSetUnknownArrayIndex);
 #endif
 
 	// scriptHandlerMgr::ManageHostMigration, has fixed 32 player array and isn't needed* for 1s
@@ -1453,7 +1474,7 @@ static HookFunction hookFunction([]()
 	MH_CreateHook(hook::get_pattern("48 83 EC ? 8A 05 ? ? ? ? 33 DB 0F 29 74 24 60", -6), UnkBubbleWrap, (void**)&g_origUnkBubbleWrap);
 #endif
 
-	// REDM1S: find in RDR3
+	// REDM1S: find in RDR3, could be 0x14229CB38 1207.58
 #ifdef GTA_FIVE
 	MH_CreateHook(hook::get_pattern("0F 29 70 C8 0F 28 F1 33 DB 45", -0x1C), GetPlayersNearPoint, (void**)&g_origGetPlayersNearPoint);
 #endif
@@ -1494,10 +1515,10 @@ static HookFunction hookFunction([]()
 	MH_CreateHook(hook::get_pattern("8A 41 49 3C FF 74 17 3C 20 73 13 0F B6 C8"), netObject__GetPlayerOwner, (void**)&g_origGetOwnerNetPlayer);
 	MH_CreateHook(hook::get_pattern("8A 41 4A 3C FF 74 17 3C 20 73 13 0F B6 C8"), netObject__GetPendingPlayerOwner, (void**)&g_origGetPendingPlayerOwner);
 #elif IS_RDR3
-	MH_CreateHook(hook::get_pattern("48 39 99 ? ? ? ? 74 ? 48 81 C1 ? ? ? ? 48 8B 19 48 85", -0xF), AllocateNetPlayer, (void**)&g_origAllocateNetPlayer);
+	MH_CreateHook(hook::get_pattern("48 39 99 ? ? ? ? 74 ? 48 81 C1 ? ? ? ? 48 8B 19 48 85", -15), AllocateNetPlayer, (void**)&g_origAllocateNetPlayer);
 
 	MH_CreateHook(hook::get_pattern("80 79 45 20 72 ? 33 C0 C3"), netObject__GetPlayerOwner, (void**)&g_origGetOwnerNetPlayer);
-	MH_CreateHook(hook::get_pattern("0F B6 C8 48 8B 05 ? ? ? ? 48 8B 84 C8", -0xB), netObject__GetPendingPlayerOwner, (void**)&g_origGetPendingPlayerOwner);
+	MH_CreateHook(hook::get_pattern("0F B6 C8 48 8B 05 ? ? ? ? 48 8B 84 C8", -11), netObject__GetPendingPlayerOwner, (void**)&g_origGetPendingPlayerOwner);
 #endif
 
 	// function is only 4 bytes, can't be hooked like this
@@ -1561,7 +1582,7 @@ static HookFunction hookFunction([]()
 	MH_CreateHook(hook::get_pattern("80 3D ? ? ? ? 00 75 ? 85 C9 0F 94 C0 EB", -0x9), IsNetworkPlayerConnected, (void**)&g_origIsNetworkPlayerConnected);
 #endif
 
-	//MH_CreateHook(hook::get_pattern("84 C0 74 0B 8A 9F ? ? 00 00", -0x14), netPlayer_IsActiveStub, (void**)&g_origNetPlayer_IsActive);
+	MH_CreateHook(hook::get_pattern("84 C0 74 0B 8A 9F ? ? 00 00", -0x14), netPlayer_IsActiveStub, (void**)&g_origNetPlayer_IsActive);
 
 	{
 #ifdef GTA_FIVE
@@ -1677,11 +1698,6 @@ static HookFunction hookFunction([]()
 	hook::nop(hook::get_pattern("8B 44 84 58 0F A3 D0 73", 7), 2);
 #endif
 
-	// REDM1S: resolve crashes I guess, don't remember why there's return
-#ifdef IS_RDR3
-	return;
-#endif
-
 	// always write up-to-date data to nodes, not the cached data from syncdata
 	{
 #ifdef GTA_FIVE
@@ -1689,11 +1705,9 @@ static HookFunction hookFunction([]()
 #elif IS_RDR3
 		auto location = hook::get_pattern("49 8B D5 48 8B CF FF 90 ? ? ? ? 84 ? 74", 6);
 #endif
-		// REDM1S: crashing
-#ifdef GTA_FIVE
+
 		hook::nop(location, 6);
-		hook::call(location, mD0Stub); // in 1207 it was B0, in 1311 it's C0
-#endif
+		hook::call(location, mD0Stub); // (RDR3) in 1207 it was 0xB0, in 1311 it's 0xC0
 	}
 
 #ifdef GTA_FIVE
@@ -2180,7 +2194,6 @@ static void HandleNetGameEvent(const char* idata, size_t len)
 #ifdef GTA_FIVE
 	static auto maxEvent = (xbr::IsGameBuildOrGreater<2060>() ? 0x5B : 0x5A);
 #elif IS_RDR3
-	// REDM1S: probably correct value, but better make sure of it
 	static auto maxEvent = 0xA5;
 #endif
 
@@ -2723,14 +2736,12 @@ static HookFunction hookFunction2([]()
 		hook::set_call(&g_origWriteDataNode, location + 0x41);
 #elif IS_RDR3
 		// REDM1S: this hook breaks experimental cloning natives!
-		//auto location = hook::get_pattern<char>("49 89 43 C8 E8 ? ? ? ? 84 C0 0F 95 C0 48 83 C4 58", -0x3E);
-		//hook::set_call(&g_origWriteDataNode, location + 0x42);
+		auto location = hook::get_pattern<char>("49 89 43 C8 E8 ? ? ? ? 84 C0 0F 95 C0 48 83 C4 58", -0x3E);
+		hook::set_call(&g_origWriteDataNode, location + 0x42);
 #endif
 
-		// REDM1S: return in RDR3 when ^ will be fixed.
-#ifdef GTA_FIVE
+		// REDM1S: same as ^
 		hook::jump(location, WriteDataNodeStub);
-#endif
 	}
 
 	{
@@ -3605,7 +3616,10 @@ static InitFunction initFunction([]()
 
 		auto st = netObj->GetSyncTree();
 		st = rage::netSyncTree::GetForType((NetObjEntityType)netObj->GetObjectType());
-		st->Write(1, 0, netObj, &buffer, 0, 31, nullptr, nullptr);
+		//st->Write(1, 0, netObj, &buffer, 0, 31, nullptr, nullptr);
+		st->WriteTreeCfx(1, 0, netObj, &buffer, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp(), nullptr, 31, nullptr, nullptr);
+
+		trace("create buffer length = %d\n", buffer.GetDataLength());
 
 		static char base64Buffer[2000];
 		size_t outLength = sizeof(base64Buffer);
@@ -3643,7 +3657,8 @@ static InitFunction initFunction([]()
 
 		auto st = netObj->GetSyncTree();
 		st = rage::netSyncTree::GetForType((NetObjEntityType)netObj->GetObjectType());
-		st->Write(2, 0, netObj, &buffer, 0, 31, nullptr, nullptr);
+		//st->Write(2, 0, netObj, &buffer, 0, 31, nullptr, nullptr);
+		st->WriteTreeCfx(2, 1, netObj, &buffer, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp(), nullptr, 31, nullptr, nullptr);
 
 		static char base64Buffer[2000];
 
@@ -3672,15 +3687,35 @@ static InitFunction initFunction([]()
 		{
 			objType = NetObjEntityType::Automobile;
 		}
+		else if (strcmp(objectType, "boat") == 0)
+		{
+			objType = NetObjEntityType::Boat;
+		}
+		else if (strcmp(objectType, "trailer") == 0)
+		{
+			objType = NetObjEntityType::Trailer;
+		}
 #ifdef IS_RDR3
+		else if (strcmp(objectType, "animal") == 0)
+		{
+			objType = NetObjEntityType::Animal;
+		}
 		else if (strcmp(objectType, "draftveh") == 0)
 		{
 			objType = NetObjEntityType::DraftVeh;
 		}
+		else if (strcmp(objectType, "horse") == 0)
+		{
+			objType = NetObjEntityType::Horse;
+		}
 #endif
+		else if (strcmp(objectType, "train") == 0)
+		{
+			objType = NetObjEntityType::Train;
+		}
 		else if (strcmp(objectType, "player") == 0)
 		{
-			objType = NetObjEntityType::Ped; // until we make native players
+			objType = NetObjEntityType::Player; // until we make native players
 		}
 		else if (strcmp(objectType, "ped") == 0)
 		{
@@ -3719,6 +3754,19 @@ static InitFunction initFunction([]()
 			return;
 		}
 
+#ifdef IS_RDR3
+		auto check2 = (*(unsigned __int8(__fastcall**)(void*))(*(uint64_t*)obj + 0x98))(obj);
+		auto check = st->m_18(obj, -1);
+
+		if (!check && !check2)
+		{
+			trace("Can't apply\n");
+			return;
+		}
+
+		(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x248))(obj);
+#endif
+
 		st->ApplyToObject(obj, nullptr);
 		rage::netObjectMgr::GetInstance()->RegisterNetworkObject(obj);
 
@@ -3737,15 +3785,40 @@ static InitFunction initFunction([]()
 			return;
 		}
 
-		obj->GetBlender()->SetTimestamp(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
-		//obj->SetBlenderTimestamp(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
-
-		obj->m_1D0();
+		(*(void(__fastcall**)(void*, uint32_t))(*(uint64_t*)obj + 0x260))(obj, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
 
 		obj->GetBlender()->ApplyBlend();
+
+		//obj->GetBlender()->SetTimestamp(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
+		//obj->SetBlenderTimestamp(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
+#ifdef IS_RDR3
+		(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x250))(obj);
+
+		if ((*(unsigned __int8(__fastcall**)(void*))(*(uint64_t*)obj + 0x280))(obj))
+		{
+			obj->GetBlender()->m_70();
+		}
+
+		obj->GetBlender()->ApplyBlend();
+
 		obj->GetBlender()->m_38();
 
-		obj->m_1C0();
+		(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x240))(obj);
+#endif
+
+#if 0
+		if ((*(unsigned __int8(__fastcall**)(void*))(*(uint64_t*)obj + 0x288))(obj))
+		{
+			auto v156 = (*(__int64(__fastcall**)(void*))(*(uint64_t*)obj + 0xB0))(obj);
+			if (v156)
+			{
+				auto v159 = (*(__int64(__fastcall**)(void*))(*(uint64_t*)obj + 0xB0))(obj);
+				*(DWORD*)(v159 + 144) &= 0xFFFFF7FF;
+				auto v160 = (*(__int64(__fastcall**)(void*))(*(uint64_t*)obj + 0xB0))(obj);
+				*(DWORD*)(v160 + 144) |= 0x400u;
+			}
+		}
+#endif
 
 		context.SetResult(getScriptGuidForEntity(obj->GetGameObject()));
 	});
@@ -3782,16 +3855,39 @@ static InitFunction initFunction([]()
 			return;
 		}
 
-		obj->GetBlender()->SetTimestamp(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
-		//obj->SetBlenderTimestamp(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
-		obj->GetBlender()->m_18();
+#if 0
+		(*(void(__fastcall**)(void*, uint32_t))(*(uint64_t*)obj + 0x260))(obj, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
+		obj->GetBlender()->m_28();
 
+		if (*(uint8_t*)((char*)obj + 84))
+		{
+			auto init = st->InitialiseTree();
+
+			(*(void(__fastcall**)(void*, uint8_t, void*, void*, void*))(*(uint64_t*)st + 0x48))(
+				st,
+				2,
+				obj,
+				(void*)init,
+				obj + 1056);
+		}
+		else
+		{
+
+			(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x248))(obj);
+			st->ApplyToObject(obj, nullptr);
+			(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x250))(obj);
+			//trace("object = %d\n", (uint64_t)obj);
+		}
+#endif
+		(*(void(__fastcall**)(void*, uint32_t))(*(uint64_t*)obj + 0x260))(obj, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
+		(*(void(__fastcall**)(void*, uint32_t))(*(uint64_t*)(obj->GetBlender()) + 0x38))(obj->GetBlender(), 0);
+
+		(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x248))(obj);
 		st->ApplyToObject(obj, nullptr);
-
-		obj->m_1D0();
+		(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x250))(obj);
 
 		//obj->GetBlender()->m_30();
-		obj->GetBlender()->m_58();
+		//obj->GetBlender()->m_58();
 
 		//obj->GetBlender()->ApplyBlend();
 		//obj->GetBlender()->m_38();
@@ -3826,7 +3922,7 @@ static InitFunction initFunction([]()
 		rage::datBitBuffer buffer(bluh, sizeof(bluh));
 
 		auto st = netObj->GetSyncTree();
-		st->Write(1, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp(), netObj, &buffer, 0, 31, nullptr, nullptr);
+		//st->Write(1, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp(), netObj, &buffer, 0, 31, nullptr, nullptr);
 
 		FILE* f = _wfopen(MakeRelativeCitPath(L"tree.bin").c_str(), L"wb");
 		fwrite(buffer.m_data, 1, (buffer.m_curBit / 8) + 1, f);
@@ -3913,10 +4009,8 @@ static HookFunction hookFunctionNative([]()
 	rage__s_NetworkTimeThisFrameStart = hook::get_address<uint32_t*>(hook::get_pattern("49 8B 0F 40 8A D6 41 2B C4 44 3B 25", 12));
 	rage__s_NetworkTimeLastFrameStart = hook::get_address<uint32_t*>(hook::get_pattern("89 05 ? ? ? ? 48 8B 01 FF 50 10 80 3D", 2));
 #elif IS_RDR3
-	// REDM1S: patternify, this pattern/offsets are invalid for some reason
-	// auto location = hook::get_pattern<char>("84 C0 74 ? 8B 05 ? ? ? ? 48 8B 0D ? ? ? ? 89");
-	rage__s_NetworkTimeThisFrameStart = (uint32_t*)0x145A6BC54; // hook::get_address<uint32_t*>(location + 6);
-	rage__s_NetworkTimeLastFrameStart = (uint32_t*)0x145A6BC50; // hook::get_address<uint32_t*>(location + 18);
+	rage__s_NetworkTimeThisFrameStart = hook::get_address<uint32_t*>(hook::get_pattern("74 ? 8B 05 ? ? ? ? 48 8B 0D ? ? ? ? 89", 4));
+	rage__s_NetworkTimeLastFrameStart = hook::get_address<uint32_t*>(hook::get_pattern("89 05 ? ? ? ? 48 8B 01 FF 50 ? 80 3D", 2));
 #endif
 });
 

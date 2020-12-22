@@ -661,6 +661,10 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 		buffer->WriteBit(objFlags & 1);
 	}
 
+#ifdef IS_RDR3
+	buffer->WriteBit(0);
+#endif
+
 	// #NETVER: 2018-12-27 17:41 -> increased maximum packet size to 768 from 256 to account for large CPlayerAppearanceDataNode
 	static auto icgi = Instance<ICoreGameInit>::Get();
 
@@ -701,6 +705,7 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 				// write Cfx length placeholder
 				if (node->IsDataNode())
 				{
+					// REDM1S: comment this if you want to use cloning natives
 					buffer->WriteUns(0, sizeLength);
 				}
 			}
@@ -919,10 +924,8 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 
 					if (state.pass == 2)
 					{
-						// REDM1S: bring back!
-#ifdef GTA_FIVE
+						// REDM1S: comment this if you want to use cloning natives
 						buffer->WriteUns(length, sizeLength);
-#endif
 					}
 				}
 
