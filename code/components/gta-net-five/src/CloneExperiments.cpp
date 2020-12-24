@@ -823,6 +823,32 @@ static void* SetUnknownArrayIndex(rage::netPlayer* player, uint8_t index)
 
 	return nullptr;
 }
+
+// REDM1S: those hooks are breaking npc speech events
+
+static void*(*g_origSendUnkSpeechEvent)(void* unk);
+
+static void* SendUnkSpeechEvent(void* unk)
+{
+	if (!icgi->OneSyncEnabled)
+	{
+		return g_origSendUnkSpeechEvent(unk);
+	}
+
+	return nullptr;
+}
+
+static void* (*g_origSendUnkSpeechEvent2)(void* unk);
+
+static void* SendUnkSpeechEvent2(void* unk)
+{
+	if (!icgi->OneSyncEnabled)
+	{
+		return g_origSendUnkSpeechEvent(unk);
+	}
+
+	return nullptr;
+}
 #endif
 
 static void(*g_origSetOwner)(rage::netObject* object, CNetGamePlayer* newOwner);
@@ -1455,8 +1481,12 @@ static HookFunction hookFunction([]()
 #endif
 
 #ifdef IS_RDR3
-	// unknown player related array in RDR3
+	// REDM1S: unknown player related array
 	MH_CreateHook(hook::get_pattern("84 C0 74 ? 88 1D ? ? ? ? EB", -0x14), SetUnknownArrayIndex, (void**)&g_origSetUnknownArrayIndex);
+
+	// REDM1S: unknown speech events causes crashes
+	MH_CreateHook((void*)0x142F66458, SendUnkSpeechEvent, (void**)&g_origSendUnkSpeechEvent);
+	MH_CreateHook((void*)0x142F6651C, SendUnkSpeechEvent2, (void**)&g_origSendUnkSpeechEvent2);
 #endif
 
 	// scriptHandlerMgr::ManageHostMigration, has fixed 32 player array and isn't needed* for 1s
