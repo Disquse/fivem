@@ -1739,9 +1739,15 @@ static HookFunction hookFunction([]()
 	{
 		virtual void InternalMain() override
 		{
+#ifdef GTA_FIVE
 			mov(rcx, rbx);
 			mov(rax, (uintptr_t)&DeletionMethod);
 			jmp(rax);
+#elif IS_RDR3
+			mov(rcx, rsi);
+			mov(rax, (uintptr_t)&DeletionMethod);
+			jmp(rax);
+#endif
 		}
 
 		static void DeletionMethod(rage::netObject* object)
