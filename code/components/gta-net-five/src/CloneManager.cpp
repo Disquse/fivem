@@ -913,7 +913,8 @@ void msgClone::Read(int syncType, rl::MessageBuffer& buffer)
 
 	if (syncType == 1)
 	{
-		m_entityType = (NetObjEntityType)buffer.Read<uint8_t>(4);
+		// REDM1S: this changed to 5 because RDR3 has more entity types
+		m_entityType = (NetObjEntityType)buffer.Read<uint8_t>(5);
 		m_creationToken = 0;
 
 		if (icgi->NetProtoVersion >= 0x202002271209)
@@ -2569,7 +2570,8 @@ void CloneManagerLocal::WriteUpdates()
 							netBuffer.Write(32, g_objectIdToCreationToken[objectId]);
 						}
 
-						netBuffer.Write(4, objectType);
+						// REDM1S: this changed to 5 because RDR3 has more entity types
+						netBuffer.Write(5, objectType);
 					}
 
 					//netBuffer.Write<uint32_t>(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp()); // timestamp?
