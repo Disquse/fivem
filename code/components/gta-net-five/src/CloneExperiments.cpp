@@ -365,7 +365,6 @@ namespace sync
 		}
 	}
 #elif IS_RDR3
-	// REDM1S: implement
 	void TempHackMakePhysicalPlayer(uint16_t clientId, int idx = -1)
 	{
 		void* fakeInAddr = calloc(256, 1);
@@ -1226,7 +1225,6 @@ static float VectorDistance(const float* point1, const float* point2)
 	return sqrtf((xd * xd) + (yd * yd) + (zd * zd));
 }
 
-// REDM1S: implement
 #if GTA_FIVE
 static hook::cdecl_stub<float*(float*, CNetGamePlayer*, void*, bool)> getNetPlayerRelevancePosition([]()
 {
@@ -1270,13 +1268,7 @@ static int GetPlayersNearPoint(const float* point, float range, CNetGamePlayer* 
 		{
 			alignas(16) float vectorPos[4];
 
-			if (
-				range >= 100000000.0f ||
-#ifdef GTA_FIVE
-				VectorDistance(point, getNetPlayerRelevancePosition(vectorPos, player, nullptr, unkVal)) < range)
-#elif IS_RDR3
-				VectorDistance(point, getNetPlayerRelevancePosition(vectorPos, player, nullptr)) < range)
-#endif
+			if (range >= 100000000.0f || VectorDistance(point, getNetPlayerRelevancePosition(vectorPos, player, nullptr, unkVal)) < range)
 			{
 				tempArray[idx] = player;
 				idx++;
@@ -1291,19 +1283,66 @@ static int GetPlayersNearPoint(const float* point, float range, CNetGamePlayer* 
 			alignas(16) float vectorPos1[4];
 			alignas(16) float vectorPos2[4];
 
-#ifdef GTA_FIVE
 			float d1 = VectorDistance(point, getNetPlayerRelevancePosition(vectorPos1, a1, nullptr, false));
 			float d2 = VectorDistance(point, getNetPlayerRelevancePosition(vectorPos2, a2, nullptr, false));
-#elif IS_RDR3
-			float d1 = VectorDistance(point, getNetPlayerRelevancePosition(vectorPos1, a1, nullptr));
-			float d2 = VectorDistance(point, getNetPlayerRelevancePosition(vectorPos2, a2, nullptr));
-#endif
 
 			return (d1 < d2);
 		});
 	}
 
 	idx = std::min(idx, 32);
+
+	std::copy(tempArray, tempArray + idx, outArray);
+
+	return idx;
+}
+#elif IS_RDR3
+static int(*g_origGetPlayersNearPoint)(const float* point, uint32_t unkIndex, void* outIndex, CNetGamePlayer* outArray[32], bool unkVal, float range, bool sorted);
+
+static int GetPlayersNearPoint(const float* point, uint32_t unkIndex, void* outIndex, CNetGamePlayer* outArray[32], bool unkVal, float range, bool sorted)
+{
+	if (!icgi->OneSyncEnabled)
+	{
+		return g_origGetPlayersNearPoint(point, unkIndex, outIndex, outArray, range, range, sorted);
+	}
+
+	CNetGamePlayer* tempArray[512];
+
+	int idx = 0;
+
+	auto playerList = netInterface_GetRemotePhysicalPlayers();
+	for (int i = 0; i < netInterface_GetNumRemotePhysicalPlayers(); i++)
+	{
+		auto player = playerList[i];
+
+		if (getPlayerPedForNetPlayer(player))
+		{
+			alignas(16) float vectorPos[4];
+
+			if (range >= 100000000.0f || VectorDistance(point, getNetPlayerRelevancePosition(vectorPos, player, nullptr)) < range)
+			{
+				tempArray[idx] = player;
+				idx++;
+			}
+		}
+	}
+
+	if (sorted)
+	{
+		std::sort(tempArray, tempArray + idx, [point](CNetGamePlayer* a1, CNetGamePlayer* a2)
+		{
+			alignas(16) float vectorPos1[4];
+			alignas(16) float vectorPos2[4];
+
+			float d1 = VectorDistance(point, getNetPlayerRelevancePosition(vectorPos1, a1, nullptr));
+			float d2 = VectorDistance(point, getNetPlayerRelevancePosition(vectorPos2, a2, nullptr));
+
+			return (d1 < d2);
+		});
+	}
+
+	idx = std::min(idx, 32);
+	unkIndex = idx;
 
 	std::copy(tempArray, tempArray + idx, outArray);
 
@@ -1507,6 +1546,8 @@ static HookFunction hookFunction([]()
 	// REDM1S: find in RDR3, could be 0x14229CB38 1207.58
 #ifdef GTA_FIVE
 	MH_CreateHook(hook::get_pattern("0F 29 70 C8 0F 28 F1 33 DB 45", -0x1C), GetPlayersNearPoint, (void**)&g_origGetPlayersNearPoint);
+#elif IS_RDR3
+	MH_CreateHook((void*)0x142310A68, GetPlayersNearPoint, (void**)&g_origGetPlayersNearPoint);
 #endif
 
 	// func that reads neteventmgr by player idx, crashes page heap
