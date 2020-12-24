@@ -1137,9 +1137,11 @@ struct CWorldStateBaseDataNode { bool Parse(SyncParseState& state) { return true
 struct CIncidentCreateDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CGuardzoneCreateDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CPedGroupCreateDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CAnimalCreationDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CProjectileCreationDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPedStandingOnObjectDataNode { bool Parse(SyncParseState& state) { return true; } };
 
 // REDM1S: unknown rdr3 nodes
-struct DataNode_14359e600 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435984c0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143598330 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143598fb0 { bool Parse(SyncParseState& state) { return true; } };
@@ -1164,11 +1166,8 @@ struct DataNode_143598c90 { bool Parse(SyncParseState& state) { return true; } }
 struct DataNode_14359eab0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359ec40 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359a590 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_143598970 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359a0e0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359abd0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359ad88 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_143598650 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435987e0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359a270 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143596d38 { bool Parse(SyncParseState& state) { return true; } };
@@ -1192,7 +1191,6 @@ struct DataNode_14359b718 { bool Parse(SyncParseState& state) { return true; } }
 struct DataNode_14359ba38 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359bbc8 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359b0d8 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_143599460 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435a0a20 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359cd00 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359ce90 { bool Parse(SyncParseState& state) { return true; } };
@@ -1229,7 +1227,6 @@ struct DataNode_14359f410 { bool Parse(SyncParseState& state) { return true; } }
 struct DataNode_14359f8c0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359fa58 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359fbf0 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_1435979d0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143597cf0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143597b60 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435931b8 { bool Parse(SyncParseState& state) { return true; } };
@@ -1342,6 +1339,10 @@ struct SyncTree : public SyncTreeBase
 						(hasPspmdn) ? pedSecPosMapDataNode->m_posZ :
 							0.0f;
 
+		if (sectorPosX == 0.0f && sectorPosY == 0.0f && sectorPosZ == 0.0f)
+		{
+			trace("warning | %d %d %d\n", sectorX, sectorY, sectorZ);
+		}
 
 		posOut[0] = ((sectorX - 512.0f) * 54.0f) + sectorPosX;
 		posOut[1] = ((sectorY - 512.0f) * 54.0f) + sectorPosY;
@@ -1592,7 +1593,7 @@ using CAnimalSyncTree = SyncTree<
 		NodeIds<127, 0, 0>,
 		ParentNode<
 			NodeIds<1, 0, 0>,
-			NodeWrapper<NodeIds<1, 0, 0>, DataNode_14359e600>
+			NodeWrapper<NodeIds<1, 0, 0>, CAnimalCreationDataNode>
 		>,
 		ParentNode<
 			NodeIds<127, 86, 0>,
@@ -1645,10 +1646,10 @@ using CAnimalSyncTree = SyncTree<
 		>,
 		ParentNode<
 			NodeIds<87, 87, 0>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143598970>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143599460>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedStandingOnObjectDataNode>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedOrientationDataNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, CPhysicalVelocityDataNode>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359a0e0>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedMovementDataNode>,
 			ParentNode<
 				NodeIds<87, 87, 0>,
 				NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359abd0>,
@@ -1659,7 +1660,7 @@ using CAnimalSyncTree = SyncTree<
 				NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359ad88>
 			>,
 			NodeWrapper<NodeIds<87, 87, 0>, CSectorDataNode>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143598650>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedSectorPosMapNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_1435987e0>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359a270>
 		>,
@@ -2043,10 +2044,10 @@ using CPedSyncTree = SyncTree<
 		>,
 		ParentNode<
 			NodeIds<87, 87, 0>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143598970>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143599460>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedStandingOnObjectDataNode>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedOrientationDataNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, CPhysicalVelocityDataNode>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359a0e0>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedMovementDataNode>,
 			ParentNode<
 				NodeIds<87, 87, 0>,
 				NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359abd0>,
@@ -2057,7 +2058,7 @@ using CPedSyncTree = SyncTree<
 				NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359ad88>
 			>,
 			NodeWrapper<NodeIds<87, 87, 0>, CSectorDataNode>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143598650>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedSectorPosMapNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_1435987e0>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359a270>
 		>,
@@ -2313,10 +2314,10 @@ using CPlayerSyncTree = SyncTree<
 		>,
 		ParentNode<
 			NodeIds<87, 86, 0>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143598970>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143599460>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedStandingOnObjectDataNode>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedOrientationDataNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, CPhysicalVelocityDataNode>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359a0e0>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedMovementDataNode>,
 			ParentNode<
 				NodeIds<87, 87, 0>,
 				NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359abd0>,
@@ -2603,7 +2604,7 @@ using CHorseSyncTree = SyncTree<
 		NodeIds<127, 0, 0>,
 		ParentNode<
 			NodeIds<1, 0, 0>,
-			NodeWrapper<NodeIds<1, 0, 0>, DataNode_14359e600>
+			NodeWrapper<NodeIds<1, 0, 0>, CAnimalCreationDataNode>
 		>,
 		ParentNode<
 			NodeIds<127, 86, 0>,
@@ -2656,10 +2657,10 @@ using CHorseSyncTree = SyncTree<
 		>,
 		ParentNode<
 			NodeIds<87, 87, 0>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143598970>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143599460>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedStandingOnObjectDataNode>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedOrientationDataNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, CPhysicalVelocityDataNode>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359a0e0>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedMovementDataNode>,
 			ParentNode<
 				NodeIds<87, 87, 0>,
 				NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359abd0>,
@@ -2670,7 +2671,7 @@ using CHorseSyncTree = SyncTree<
 				NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359ad88>
 			>,
 			NodeWrapper<NodeIds<87, 87, 0>, CSectorDataNode>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143598650>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedSectorPosMapNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_1435987e0>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359a270>
 		>,
@@ -2695,7 +2696,7 @@ using CWorldProjectileSyncTree = SyncTree<
 		NodeIds<127, 0, 0>,
 		ParentNode<
 			NodeIds<1, 0, 0>,
-			NodeWrapper<NodeIds<1, 0, 0>, DataNode_1435979d0>
+			NodeWrapper<NodeIds<1, 0, 0>, CProjectileCreationDataNode>
 		>,
 		ParentNode<
 			NodeIds<127, 87, 0>,
