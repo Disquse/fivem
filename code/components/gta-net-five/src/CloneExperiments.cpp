@@ -2559,11 +2559,7 @@ static HookFunction hookFunctionEv([]()
 	MH_Initialize();
 
 	{
-#ifdef GTA_FIVE
 		auto location = hook::get_pattern<char>("E8 ? ? ? ? 48 8B CB E8 ? ? ? ? 84 C0 74 11 48 8B 0D", 0x14);
-#elif IS_RDR3
-		auto location = hook::get_pattern<char>("E8 ? ? ? ? 48 8B CB E8 ? ? ? ? 84 C0 74 11 48 8B 0D", 0x14);
-#endif
 
 		g_netEventMgr = hook::get_address<void*>(location);
 		MH_CreateHook(hook::get_call(location + 7), EventMgr_AddEvent, (void**)&g_origAddEvent);
@@ -2865,12 +2861,12 @@ static hook::cdecl_stub<void*()> _getConnectionManager([]()
 #endif
 });
 
-#ifdef GTA_FIVE
 static bool (*g_origInitializeTime)(void* timeSync, void* connectionMgr, int flags, void* trustHost,
-uint32_t sessionSeed, int* deltaStart, int packetFlags, int initialBackoff, int maxBackoff);
+	uint32_t sessionSeed, int* deltaStart, int packetFlags, int initialBackoff, int maxBackoff);
 
 static bool g_initedTimeSync;
 
+#ifdef GTA_FIVE
 struct ExtraAddressData
 {
 	uint32_t addr;
@@ -3094,11 +3090,6 @@ bool netTimeSync__InitializeTimeStub(netTimeSync<Build>* timeSync, void* connect
 	return true;
 }
 #elif IS_RDR3
-static bool (*g_origInitializeTime)(void* timeSync, void* connectionMgr, int flags, void* trustHost,
-	uint32_t sessionSeed, int* deltaStart, int packetFlags, int initialBackoff, int maxBackoff);
-
-static bool g_initedTimeSync;
-
 class netTimeSync
 {
 public:
