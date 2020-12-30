@@ -954,9 +954,9 @@ struct CPedTaskSpecificDataNode { bool Parse(SyncParseState& state) { return tru
 
 struct CPedSectorPosMapNode
 {
-	float m_sectorPosX;
-	float m_sectorPosY;
-	float m_sectorPosZ;
+	float m_posX;
+	float m_posY;
+	float m_posZ;
 
 	bool Parse(SyncParseState& state)
 	{
@@ -964,9 +964,9 @@ struct CPedSectorPosMapNode
 		auto posY = state.buffer.ReadFloat(12, 54.0f);
 		auto posZ = state.buffer.ReadFloat(12, 69.0f);
 
-		m_sectorPosX = posX;
-		m_sectorPosY = posY;
-		m_sectorPosZ = posZ;
+		m_posX = posX;
+		m_posY = posY;
+		m_posZ = posZ;
 
 		state.entity->syncTree->CalculatePosition();
 
@@ -1028,9 +1028,9 @@ struct CPlayerSectorPosNode
 		auto posY = state.buffer.ReadFloat(12, 54.0f);
 		auto posZ = state.buffer.ReadFloat(12, 69.0f);
 
-		m_sectorPosX = posX;
-		m_sectorPosY = posY;
-		m_sectorPosZ = posZ;
+		m_posX = posX;
+		m_posY = posY;
+		m_posZ = posZ;
 
 		// extra data
 		if (state.buffer.ReadBit())
@@ -1130,6 +1130,79 @@ struct CPlayerCameraDataNode
 	}
 };
 
+struct CWorldProjectileDataNode
+{
+	int m_sectorX;
+	int m_sectorY;
+	int m_sectorZ;
+
+	float m_posX;
+	float m_posY;
+	float m_posZ;
+
+	bool Parse(SyncParseState& state)
+	{
+		bool isAttached = state.buffer.ReadBit();
+
+		if (!isAttached)
+		{
+			m_sectorX = state.buffer.Read<int>(10);
+			m_sectorY = state.buffer.Read<int>(10);
+			m_sectorZ = state.buffer.Read<int>(6);
+
+			m_posX = state.buffer.ReadFloat(20, 54.0f);
+			m_posY = state.buffer.ReadFloat(20, 54.0f);
+			m_posZ = state.buffer.ReadFloat(20, 69.0f);
+		}
+		else
+		{
+			bool unk = state.buffer.ReadBit();
+
+			m_sectorX = 512;
+			m_sectorY = 512;
+			m_sectorZ = 0;
+
+			m_posX = state.buffer.ReadFloat(16, 17.0f);
+			m_posY = state.buffer.ReadFloat(16, 17.0f);
+			m_posZ = state.buffer.ReadFloat(10, 8.0f);
+		}
+
+		// TODO
+
+		return true;
+	}
+};
+
+struct CHerdPositionNode
+{
+	float m_posX;
+	float m_posY;
+	float m_posZ;
+
+	bool Parse(SyncParseState& state)
+	{
+		auto unk = state.buffer.Read<int>(19);
+		bool unk2 = state.buffer.ReadBit();
+
+		if (unk2)
+		{
+			auto unk3 = state.buffer.Read<uint8_t>(3);
+
+			m_posX = state.buffer.ReadFloat(6, 5.0f);
+			m_posY = state.buffer.ReadFloat(10, 300.0f);
+			m_posZ = state.buffer.ReadFloat(6, 20.0f);
+		}
+		else
+		{
+			m_posX = 0.0f;
+			m_posY = 0.0f;
+			m_posZ = 0.0f;
+		}
+
+		return true;
+	}
+};
+
 struct CPlayerWantedAndLOSDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CDraftVehCreationDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CStatsTrackerGameStateDataNode { bool Parse(SyncParseState& state) { return true; } };
@@ -1140,8 +1213,18 @@ struct CPedGroupCreateDataNode { bool Parse(SyncParseState& state) { return true
 struct CAnimalCreationDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CProjectileCreationDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CPedStandingOnObjectDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CProjectileAttachNode { bool Parse(SyncParseState& state) { return true; } };
+struct CHerdMemberDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CHerdGameDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CAnimSceneCreationDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CAnimSceneFrequentDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CAnimSceneInfrequentDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CGroupScenarioFrequentDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CGroupScenarioEntitiesDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CGroupScenarioCreationDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPropSetCreationDataNode { bool Parse(SyncParseState& state) { return true; } };
 
-// REDM1S: unknown rdr3 nodes
+// REDM1S: unknown rdr3 nodes (addresses are 1311.20)
 struct DataNode_1435984c0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143598330 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143598fb0 { bool Parse(SyncParseState& state) { return true; } };
@@ -1215,20 +1298,8 @@ struct DataNode_1435a0568 { bool Parse(SyncParseState& state) { return true; } }
 struct DataNode_1435a1838 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435a19c8 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435a1b58 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_1435a0d48 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435a0ed8 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435a1068 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_143592398 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_1435926b8 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_143592528 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359f0f0 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359f280 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359f410 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359f8c0 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359fa58 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359fbf0 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_143597cf0 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_143597b60 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435931b8 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143593348 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435934d8 { bool Parse(SyncParseState& state) { return true; } };
@@ -1308,36 +1379,44 @@ struct SyncTree : public SyncTreeBase
 	{
 		auto [hasSdn, secDataNode] = GetData<CSectorDataNode>();
 		auto [hasSpdn, secPosDataNode] = GetData<CSectorPositionDataNode>();
+		auto [hasWpdn, projectileDataNode] = GetData<CWorldProjectileDataNode>();
 		auto [hasPspdn, playerSecPosDataNode] = GetData<CPlayerSectorPosNode>();
 		auto [hasOspdn, objectSecPosDataNode] = GetData<CObjectSectorPosNode>();
 		auto [hasPspmdn, pedSecPosMapDataNode] = GetData<CPedSectorPosMapNode>();
 		auto [hasDoor, doorCreationDataNode] = GetData<CDoorCreationDataNode>();
 		auto [hasPgsdn, pedGameStateDataNode] = GetData<CPedGameStateDataNode>();
+		auto [hasHpn, herdPosNode] = GetData<CHerdPositionNode>();
 
-		auto sectorX = (hasSdn) ? secDataNode->m_sectorX : 512;
-		auto sectorY = (hasSdn) ? secDataNode->m_sectorY : 512;
-		auto sectorZ = (hasSdn) ? secDataNode->m_sectorZ : 0;
+		auto sectorX = (hasSdn) ? secDataNode->m_sectorX : (hasWpdn) ? projectileDataNode->m_sectorX : 512;
+		auto sectorY = (hasSdn) ? secDataNode->m_sectorY : (hasWpdn) ? projectileDataNode->m_sectorY : 512;
+		auto sectorZ = (hasSdn) ? secDataNode->m_sectorZ : (hasWpdn) ? projectileDataNode->m_sectorZ : 0;
 
 		auto sectorPosX =
 			(hasSpdn) ? secPosDataNode->m_posX :
 				(hasPspdn) ? playerSecPosDataNode->m_posX :
 					(hasOspdn) ? objectSecPosDataNode->m_posX :
 						(hasPspmdn) ? pedSecPosMapDataNode->m_posX :
-							0.0f;
+							(hasWpdn) ? projectileDataNode->m_posX :
+								(hasHpn) ? herdPosNode->m_posX :
+									0.0f;
 
 		auto sectorPosY =
 			(hasSpdn) ? secPosDataNode->m_posY :
-				(hasPspdn) ? playerSecPosDataNode->m_posY :
-					(hasOspdn) ? objectSecPosDataNode->m_posY :
-						(hasPspmdn) ? pedSecPosMapDataNode->m_posY :
-							0.0f;
+				(hasPspdn) ? playerSecPosDataNode->m_sectorPosY :
+					(hasOspdn) ? objectSecPosDataNode->m_sectorPosY :
+						(hasPspmdn) ? pedSecPosMapDataNode->m_sectorPosY :
+							(hasWpdn) ? projectileDataNode->m_sectorPosY :
+								(hasHpn) ? herdPosNode->m_posZ :
+									0.0f;
 
 		auto sectorPosZ =
 			(hasSpdn) ? secPosDataNode->m_posZ :
-				(hasPspdn) ? playerSecPosDataNode->m_posZ :
-					(hasOspdn) ? objectSecPosDataNode->m_posZ :
-						(hasPspmdn) ? pedSecPosMapDataNode->m_posZ :
-							0.0f;
+				(hasPspdn) ? playerSecPosDataNode->m_sectorPosZ :
+					(hasOspdn) ? objectSecPosDataNode->m_sectorPosZ :
+						(hasPspmdn) ? pedSecPosMapDataNode->m_sectorPosZ :
+							(hasWpdn) ? projectileDataNode->m_sectorPosZ :
+								(hasHpn) ? herdPosNode->m_posZ :
+									0.0f;
 
 		if (sectorPosX == 0.0f && sectorPosY == 0.0f && sectorPosZ == 0.0f)
 		{
@@ -2329,7 +2408,7 @@ using CPlayerSyncTree = SyncTree<
 			>,
 			NodeWrapper<NodeIds<87, 87, 0>, CSectorDataNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, CPlayerSectorPosNode>,
-			NodeWrapper<NodeIds<86, 86, 0>, CPlayerCameraDataNode>, // not sure
+			NodeWrapper<NodeIds<86, 86, 0>, CPlayerCameraDataNode>,
 			NodeWrapper<NodeIds<86, 86, 0>, DataNode_14359c9e0>,
 			NodeWrapper<NodeIds<86, 86, 0>, DataNode_14359d660>
 		>,
@@ -2534,7 +2613,7 @@ using CStatsTrackerSyncTree = SyncTree<
 using CPropSetSyncTree = SyncTree<
 	ParentNode<
 		NodeIds<127, 0, 0>,
-		NodeWrapper<NodeIds<1, 0, 0>, DataNode_1435a0d48>,
+		NodeWrapper<NodeIds<1, 0, 0>, CPropSetCreationDataNode>,
 		NodeWrapper<NodeIds<87, 87, 0>, CEntityScriptInfoDataNode>,
 		NodeWrapper<NodeIds<4, 0, 0>, CMigrationDataNode>,
 		NodeWrapper<NodeIds<127, 127, 0>, CGlobalFlagsDataNode>,
@@ -2547,17 +2626,17 @@ using CAnimSceneSyncTree = SyncTree<
 		NodeIds<127, 0, 0>,
 		ParentNode<
 			NodeIds<87, 0, 0>,
-			NodeWrapper<NodeIds<1, 0, 0>, DataNode_143592398>,
+			NodeWrapper<NodeIds<1, 0, 0>, CAnimSceneCreationDataNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, CEntityScriptInfoDataNode>
 		>,
 		ParentNode<
 			NodeIds<127, 127, 0>,
 			NodeWrapper<NodeIds<127, 127, 0>, CGlobalFlagsDataNode>,
-			NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435926b8>
+			NodeWrapper<NodeIds<127, 127, 0>, CAnimSceneInfrequentDataNode>
 		>,
 		ParentNode<
 			NodeIds<86, 86, 0>,
-			NodeWrapper<NodeIds<86, 86, 0>, DataNode_143592528>
+			NodeWrapper<NodeIds<86, 86, 0>, CAnimSceneFrequentDataNode>
 		>,
 		ParentNode<
 			NodeIds<4, 0, 0>,
@@ -2570,17 +2649,17 @@ using CGroupScenarioSyncTree = SyncTree<
 		NodeIds<127, 0, 0>,
 		ParentNode<
 			NodeIds<87, 0, 0>,
-			NodeWrapper<NodeIds<1, 0, 0>, DataNode_14359f0f0>,
+			NodeWrapper<NodeIds<1, 0, 0>, CGroupScenarioCreationDataNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, CEntityScriptInfoDataNode>
 		>,
 		ParentNode<
 			NodeIds<127, 127, 0>,
 			NodeWrapper<NodeIds<127, 127, 0>, CGlobalFlagsDataNode>,
-			NodeWrapper<NodeIds<127, 127, 0>, DataNode_14359f280>
+			NodeWrapper<NodeIds<127, 127, 0>, CGroupScenarioEntitiesDataNode>
 		>,
 		ParentNode<
 			NodeIds<86, 86, 0>,
-			NodeWrapper<NodeIds<86, 86, 0>, DataNode_14359f410>
+			NodeWrapper<NodeIds<86, 86, 0>, CGroupScenarioFrequentDataNode>
 		>,
 		ParentNode<
 			NodeIds<4, 0, 0>,
@@ -2594,9 +2673,9 @@ using CHerdSyncTree = SyncTree<
 		NodeWrapper<NodeIds<4, 0, 0>, CMigrationDataNode>,
 		NodeWrapper<NodeIds<87, 87, 0>, CEntityScriptInfoDataNode>,
 		NodeWrapper<NodeIds<127, 127, 0>, CGlobalFlagsDataNode>,
-		NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359f8c0>,
-		NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359fa58>,
-		NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359fbf0>
+		NodeWrapper<NodeIds<87, 87, 0>, CHerdGameDataNode>,
+		NodeWrapper<NodeIds<87, 87, 0>, CHerdMemberDataNode>,
+		NodeWrapper<NodeIds<87, 87, 0>, CHerdPositionNode>
 	>
 >;
 using CHorseSyncTree = SyncTree<
@@ -2701,11 +2780,11 @@ using CWorldProjectileSyncTree = SyncTree<
 		ParentNode<
 			NodeIds<127, 87, 0>,
 			NodeWrapper<NodeIds<127, 127, 0>, CGlobalFlagsDataNode>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143597cf0>
+			NodeWrapper<NodeIds<87, 87, 0>, CProjectileAttachNode>
 		>,
 		ParentNode<
 			NodeIds<87, 87, 0>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143597b60>
+			NodeWrapper<NodeIds<87, 87, 0>, CWorldProjectileDataNode>
 		>,
 		ParentNode<
 			NodeIds<4, 0, 0>,
