@@ -59,7 +59,7 @@ public:
 #ifdef GTA_FIVE
 	virtual CNetGamePlayer* AddPlayer(void* scInAddr, void* unkNetValue, void* addedIn1290, void* playerData, void* nonPhysicalPlayerData) = 0;
 #elif IS_RDR3
-	virtual CNetGamePlayer* AddPlayer(void* scInAddr, uint32_t unkNetValue, void* playerData, void* playerAccountId) = 0;
+	virtual CNetGamePlayer* AddPlayer(void* scInAddr, uint32_t activePlayerIndex, void* playerData, void* playerAccountId) = 0;
 #endif
 
 	virtual void RemovePlayer(CNetGamePlayer* player) = 0;
@@ -371,7 +371,7 @@ namespace sync
 		void* fakeFakeData = calloc(256, 1);
 
 		rlGamerInfo* inAddr = (rlGamerInfo*)fakeInAddr;
-		inAddr->peerAddress.localAddr.ip.addr = clientId ^ 0xFEED;
+		inAddr->peerAddress.localAddr.ip.addr = (clientId ^ 0xFEED) | 0xc0a80000;
 		inAddr->peerAddress.relayAddr.ip.addr = clientId ^ 0xFEED;
 		inAddr->peerAddress.publicAddr.ip.addr = clientId ^ 0xFEED;
 		inAddr->peerAddress.rockstarAccountId = clientId;
@@ -842,7 +842,7 @@ static void* SendUnkSpeechEvent2(void* unk)
 {
 	if (!icgi->OneSyncEnabled)
 	{
-		return g_origSendUnkSpeechEvent(unk);
+		return g_origSendUnkSpeechEvent2(unk);
 	}
 
 	return nullptr;
