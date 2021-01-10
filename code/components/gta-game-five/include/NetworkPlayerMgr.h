@@ -151,8 +151,7 @@ private:
 public:
 	void* GetPlayerInfo()
 	{
-		auto entry = (xbr::IsGameBuildOrGreater<2060>() ? impl.m2060 : impl.m1604);
-		return entry.playerInfo;
+		return (xbr::IsGameBuildOrGreater<2060>()) ? impl.m2060.playerInfo : impl.m1604.playerInfo;
 	}
 
 public:

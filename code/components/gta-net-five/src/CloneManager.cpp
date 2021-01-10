@@ -44,13 +44,15 @@ rage::netObject* g_curNetObject;
 
 static std::set<uint16_t> g_dontParrotDeletionAcks;
 
+#ifdef GTA_FIVE
+static constexpr int g_netObjectTypeBitLength = 4;
+#elif IS_RDR3
+static constexpr int g_netObjectTypeBitLength = 5;
+#endif
+
 void ObjectIds_AddObjectId(int objectId);
 void ObjectIds_StealObjectId(int objectId);
 void ObjectIds_ConfirmObjectId(int objectId);
-
-#ifdef IS_RDR3
-bool EnsurePlayer31();
-#endif
 
 void AssociateSyncTree(int objectId, rage::netSyncTree* syncTree);
 
@@ -534,8 +536,7 @@ void CloneManagerLocal::ProcessSyncAck(uint16_t objId, uint16_t uniqifier)
 			syncTree->AckCfx(netObj, m_ackTimestamp);
 
 #ifdef GTA_FIVE
-			// REDM1S: crashes, it seems a valid player check was changed and now it's less realible
-			//if (netObj->m_20() && EnsurePlayer31())
+			// REDM1S: crashes, it seems a valid player check was changed, anyway it's not needed anymore?
 			if (netObj->m_20())
 			{
 				_processAck(syncTree, netObj, 31, 0 /* seq? */, m_ackTimestamp, 0xFFFFFFFF);
@@ -913,8 +914,7 @@ void msgClone::Read(int syncType, rl::MessageBuffer& buffer)
 
 	if (syncType == 1)
 	{
-		// REDM1S: this changed to 5 because RDR3 has more entity types
-		m_entityType = (NetObjEntityType)buffer.Read<uint8_t>(5);
+		m_entityType = (NetObjEntityType)buffer.Read<uint8_t>(g_netObjectTypeBitLength);
 		m_creationToken = 0;
 
 		if (icgi->NetProtoVersion >= 0x202002271209)
@@ -2570,8 +2570,7 @@ void CloneManagerLocal::WriteUpdates()
 							netBuffer.Write(32, g_objectIdToCreationToken[objectId]);
 						}
 
-						// REDM1S: this changed to 5 because RDR3 has more entity types
-						netBuffer.Write(5, objectType);
+						netBuffer.Write(g_netObjectTypeBitLength, objectType);
 					}
 
 					//netBuffer.Write<uint32_t>(rage::netInterface_queryFunctions::GetInstance()->GetTimestamp()); // timestamp?

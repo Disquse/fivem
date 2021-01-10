@@ -437,11 +437,10 @@ static hook::cdecl_stub<void* (CNetGamePlayer*)> getPlayerPedForNetPlayer([]()
 #endif
 });
 
-// REDM1S: better solution?
 #ifdef GTA_FIVE
-static const uint32_t EntityNetObjOffset = 208;
+static const uint32_t g_entityNetObjOffset = 208;
 #elif IS_RDR3
-static const uint32_t EntityNetObjOffset = 224;
+static const uint32_t g_entityNetObjOffset = 224;
 #endif
 
 rage::netObject* GetLocalPlayerPedNetObject()
@@ -450,7 +449,7 @@ rage::netObject* GetLocalPlayerPedNetObject()
 
 	if (ped)
 	{
-		auto netObj = *(rage::netObject**)((char*)ped + EntityNetObjOffset);
+		auto netObj = *(rage::netObject**)((char*)ped + g_entityNetObjOffset);
 
 		return netObj;
 	}
@@ -491,7 +490,7 @@ void HandleClientDrop(const NetLibraryClientInfo& info)
 
 		if (ped)
 		{
-			auto netObj = *(rage::netObject**)((char*)ped + EntityNetObjOffset);
+			auto netObj = *(rage::netObject**)((char*)ped + g_entityNetObjOffset);
 
 			if (netObj)
 			{
@@ -3046,36 +3045,6 @@ private:
 template<int Build>
 static netTimeSync<Build>** g_netTimeSync;
 
-bool IsWaitingForTimeSync()
-{
-	if (xbr::IsGameBuildOrGreater<2060>())
-	{
-		return !(*g_netTimeSync<2060>)->IsInitialized();
-	}
-
-	return !(*g_netTimeSync<1604>)->IsInitialized();
-}
-
-static InitFunction initFunctionTime([]()
-{
-	NetLibrary::OnNetLibraryCreate.Connect([](NetLibrary* lib)
-	{
-		lib->AddReliableHandler("msgTimeSync", [](const char* data, size_t len)
-		{
-			net::Buffer buf(reinterpret_cast<const uint8_t*>(data), len);
-
-			if (xbr::IsGameBuildOrGreater<2060>())
-			{
-				(*g_netTimeSync<2060>)->HandleTimeSync(buf);
-			}
-			else
-			{
-				(*g_netTimeSync<1604>)->HandleTimeSync(buf);
-			}
-		});
-	});
-});
-
 template<int Build>
 bool netTimeSync__InitializeTimeStub(netTimeSync<Build>* timeSync, void* connectionMgr, int flags, void* trustHost,
 	uint32_t sessionSeed, int* deltaStart, int packetFlags, int initialBackoff, int maxBackoff)
@@ -3249,24 +3218,6 @@ public:
 
 static netTimeSync** g_netTimeSync;
 
-bool IsWaitingForTimeSync()
-{
-	return !(*g_netTimeSync)->IsInitialized();
-}
-
-static InitFunction initFunctionTime([]()
-{
-	NetLibrary::OnNetLibraryCreate.Connect([](NetLibrary* lib)
-	{
-		lib->AddReliableHandler("msgTimeSync", [](const char* data, size_t len)
-		{
-			net::Buffer buf(reinterpret_cast<const uint8_t*>(data), len);
-
-			(*g_netTimeSync)->HandleTimeSync(buf);
-		});
-	});
-});
-
 bool netTimeSync__InitializeTimeStub(netTimeSync* timeSync, void* connectionMgr, int flags, void* trustHost,
 	uint32_t sessionSeed, int* deltaStart, int packetFlags, int initialBackoff, int maxBackoff)
 {
@@ -3280,6 +3231,44 @@ bool netTimeSync__InitializeTimeStub(netTimeSync* timeSync, void* connectionMgr,
 	return true;
 }
 #endif
+
+bool IsWaitingForTimeSync()
+{
+#ifdef GTA_FIVE
+	if (xbr::IsGameBuildOrGreater<2060>())
+	{
+		return !(*g_netTimeSync<2060>)->IsInitialized();
+	}
+
+	return !(*g_netTimeSync<1604>)->IsInitialized();
+#elif IS_RDR3
+	return !(*g_netTimeSync)->IsInitialized();
+#endif
+}
+
+static InitFunction initFunctionTime([]()
+{
+	NetLibrary::OnNetLibraryCreate.Connect([](NetLibrary* lib)
+	{
+		lib->AddReliableHandler("msgTimeSync", [](const char* data, size_t len)
+		{
+			net::Buffer buf(reinterpret_cast<const uint8_t*>(data), len);
+
+#ifdef GTA_FIVE
+			if (xbr::IsGameBuildOrGreater<2060>())
+			{
+				(*g_netTimeSync<2060>)->HandleTimeSync(buf);
+			}
+			else
+			{
+				(*g_netTimeSync<1604>)->HandleTimeSync(buf);
+			}
+#elif IS_RDR3
+			(*g_netTimeSync)->HandleTimeSync(buf);
+#endif
+		});
+	});
+});
 
 static HookFunction hookFunctionTime([]()
 {
@@ -3672,7 +3661,7 @@ static InitFunction initFunction([]()
 			return;
 		}
 
-		auto netObj = *(rage::netObject**)(entity + EntityNetObjOffset);
+		auto netObj = *(rage::netObject**)(entity + g_entityNetObjOffset);
 
 		static char blah[90000];
 
@@ -3713,7 +3702,7 @@ static InitFunction initFunction([]()
 			return;
 		}
 
-		auto netObj = *(rage::netObject**)(entity + EntityNetObjOffset);
+		auto netObj = *(rage::netObject**)(entity + g_entityNetObjOffset);
 
 		static char blah[90000];
 
@@ -3901,7 +3890,7 @@ static InitFunction initFunction([]()
 			return;
 		}
 
-		auto obj = *(rage::netObject**)(entity + EntityNetObjOffset);
+		auto obj = *(rage::netObject**)(entity + g_entityNetObjOffset);
 
 		auto data = context.GetArgument<const char*>(1);
 
@@ -3973,7 +3962,7 @@ static InitFunction initFunction([]()
 			return;
 		}
 
-		auto obj = *(rage::netObject**)(entity + EntityNetObjOffset);
+		auto obj = *(rage::netObject**)(entity + g_entityNetObjOffset);
 		//obj->GetBlender()->m_30();
 		obj->GetBlender()->m_58();
 	});
@@ -3981,7 +3970,7 @@ static InitFunction initFunction([]()
 	static ConsoleCommand saveCloneCmd("save_clone", [](const std::string& address)
 	{
 		uintptr_t addressPtr = _strtoui64(address.c_str(), nullptr, 16);
-		auto netObj = *(rage::netObject**)(addressPtr + EntityNetObjOffset);
+		auto netObj = *(rage::netObject**)(addressPtr + g_entityNetObjOffset);
 
 		static char blah[90000];
 
