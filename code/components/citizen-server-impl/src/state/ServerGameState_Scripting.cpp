@@ -8,6 +8,7 @@
 #include <ScriptEngine.h>
 
 #include <ScriptSerialization.h>
+#include <MakeClientFunction.h>
 #include <MakePlayerEntityFunction.h>
 
 namespace fx

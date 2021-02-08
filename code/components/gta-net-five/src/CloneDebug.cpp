@@ -29,7 +29,11 @@
 
 inline size_t GET_NIDX(rage::netSyncTree* tree, void* node)
 {
+#ifdef GTA_FIVE
 	return *((uint8_t*)node + 66);
+#elif IS_RDR3
+	return *((uint8_t*)node + 68);
+#endif
 }
 
 static bool Splitter(bool split_vertically, float thickness, float* size1, float* size2, float min_size1, float min_size2, float splitter_long_axis_size = -1.0f)
@@ -571,8 +575,12 @@ static void TraverseTree(rage::netSyncTree* tree, T& state, const std::function<
 
 static void InitTree(rage::netSyncTree* tree)
 {
-	// unused padding in GTA5
+	// unused padding in GTA5/RDR3
+#ifdef GTA_FIVE
 	auto didStuff = (uint16_t*)((char*)tree + 1222);
+#elif IS_RDR3
+	auto didStuff = (uint16_t*)((char*)tree + 1990);
+#endif
 
 	if (*didStuff != 0xCFCF)
 	{
@@ -585,7 +593,11 @@ static void InitTree(rage::netSyncTree* tree)
 			}
 			else if (node->IsDataNode())
 			{
+#ifdef GTA_FIVE
 				*((uint8_t*)node + 66) = idx++;
+#elif IS_RDR3
+				*((uint8_t*)node + 68) = idx++;
+#endif
 			}
 
 			return true;
@@ -633,8 +645,10 @@ static void AddNodeAndExternalDependentNodes(netSyncDataNodeBase* node, rage::ne
 	}
 }
 
+#ifdef GTA_FIVE
 static void LoadPlayerAppearanceDataNode(rage::netSyncNodeBase* node);
 static void StorePlayerAppearanceDataNode(rage::netSyncNodeBase* node);
+#endif
 
 bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object, rage::datBitBuffer* buffer, uint32_t time, void* logger, uint8_t targetPlayer, void* outNull, uint32_t* lastChangeTime)
 {
@@ -717,7 +731,7 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 			else
 			{
 				// compare last data for the node
-				auto nodeData = &g_syncData[state.object->GetObjectId()].nodes[node];
+				auto nodeData = &g_syncData[state.object->GetObjectId()]->nodes[nodeIdx];
 				uint32_t nodeSyncDelay = GetDelayForUpdateFrequency(node->GetUpdateFrequency(UpdateLevel::VERY_HIGH));
 
 				// throttle sends by waiting for the requested node delay
@@ -728,7 +742,7 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 					auto updateNode = [this, &state, &processedNodes, sizeLength](rage::netSyncDataNodeBase* dataNode, bool force) -> bool
 					{
 						size_t dataNodeIdx = GET_NIDX(this, dataNode);
-						auto nodeData = &g_syncData[state.object->GetObjectId()].nodes[dataNode];
+						auto nodeData = &g_syncData[state.object->GetObjectId()]->nodes[dataNodeIdx];
 
 						if (processedNodes.test(dataNodeIdx))
 						{
@@ -739,12 +753,16 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 						std::array<uint8_t, 1024> tempData;
 						memset(tempData.data(), 0, tempData.size());
 
+#ifdef GTA_FIVE
 						LoadPlayerAppearanceDataNode(dataNode);
+#endif
 
 						rage::datBitBuffer tempBuf(tempData.data(), (sizeLength == 11) ? 256 : tempData.size());
 						dataNode->WriteObject(state.object, &tempBuf, state.logger, true);
 
+#ifdef GTA_FIVE
 						StorePlayerAppearanceDataNode(dataNode);
+#endif
 
 						if (force || tempBuf.m_curBit != std::get<1>(nodeData->lastData) || memcmp(tempData.data(), std::get<0>(nodeData->lastData).data(), tempData.size()) != 0)
 						{
@@ -799,7 +817,7 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 							for (int child = 0; child < childCount; child++)
 							{
 								size_t childIdx = GET_NIDX(this, children[child]);
-								auto childData = &g_syncData[state.object->GetObjectId()].nodes[children[child]];
+								auto childData = &g_syncData[state.object->GetObjectId()]->nodes[childIdx];
 
 								written |= updateNode(children[child], nodeData->manuallyDirtied || childData->manuallyDirtied || written);
 							}
@@ -1199,21 +1217,27 @@ void RenderSyncNodeDetail(rage::netObject* netObject, rage::netSyncNodeBase* nod
 		left.push_back(line);
 	});
 
+#ifdef GTA_FIVE
 	LoadPlayerAppearanceDataNode(node);
-	node->LogObject(netObject, &logger);
-	StorePlayerAppearanceDataNode(node);
+#endif
 
+	node->LogObject(netObject, &logger);
+
+#ifdef GTA_FIVE
+	StorePlayerAppearanceDataNode(node);
+#endif
 
 	std::vector<std::string> right = syncLog[netObject->GetObjectId()][node];
+
 	auto t = g_netObjectNodeMapping[netObject->GetObjectId()][node];
 
 	InitTree(netObject->GetSyncTree());
 	auto& sd = rage::g_syncData[netObject->GetObjectId()]->nodes[GET_NIDX(netObject->GetSyncTree(), node)];
 
 	ImGui::Text("Last %s: %d ms ago", std::get<int>(t) ? "written" : "read", rage::netInterface_queryFunctions::GetInstance()->GetTimestamp() - std::get<uint32_t>(t));
-	ImGui::Text("Last ack: %d ms ago", rage::netInterface_queryFunctions::GetInstance()->GetTimestamp() - rage::g_syncData[netObject->GetObjectId()].nodes[node].lastAck);
-	ImGui::Text("Last change: %d ms ago", rage::netInterface_queryFunctions::GetInstance()->GetTimestamp() - rage::g_syncData[netObject->GetObjectId()].nodes[node].lastChange);
-	ImGui::Text("Change - Ack: %d ms", rage::g_syncData[netObject->GetObjectId()].nodes[node].lastChange - rage::g_syncData[netObject->GetObjectId()].nodes[node].lastAck);
+	ImGui::Text("Last ack: %d ms ago", rage::netInterface_queryFunctions::GetInstance()->GetTimestamp() - sd.lastAck);
+	ImGui::Text("Last change: %d ms ago", rage::netInterface_queryFunctions::GetInstance()->GetTimestamp() - sd.lastChange);
+	ImGui::Text("Change - Ack: %d ms", sd.lastChange - sd.lastAck);
 
 	ImGui::Columns(2);
 	ImGui::Text("Current");
@@ -1369,6 +1393,7 @@ static void DumpSyncTree(rage::netSyncTree* syncTree)
 }
 #endif
 
+#ifdef GTA_FIVE
 static uintptr_t g_vtbl_playerAppearanceDataNode;
 static uint32_t g_offset_playerAppearanceDataNode_hasDecorations;
 
@@ -1392,6 +1417,7 @@ static void StorePlayerAppearanceDataNode(rage::netSyncNodeBase* node)
 	}
 }
 }
+#endif
 
 static HookFunction hookFunction([]()
 {
@@ -1409,6 +1435,7 @@ static HookFunction hookFunction([]()
 	});
 #endif
 
+#if GTA_FIVE
 	// CPlayerAppearanceDataNode decorations uninitialized value
 	{
 		g_vtbl_playerAppearanceDataNode = hook::get_address<uintptr_t>(hook::pattern("48 89 BB B8 00 00 00 48 89 83 B0 00 00 00").count(2).get(1).get<void*>(-0xE));
@@ -1416,7 +1443,6 @@ static HookFunction hookFunction([]()
 	}
 
 	// allow CSyncDataLogger even without label string
-#if GTA_FIVE
 	hook::nop(hook::get_pattern("4D 85 C9 74 44 48 8D 4C", 3), 2);
 	hook::nop(hook::get_pattern("4D 85 C0 74 25 80 3A 00", 3), 2);
 

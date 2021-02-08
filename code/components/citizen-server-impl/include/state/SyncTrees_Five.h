@@ -864,7 +864,7 @@ struct CDoorScriptGameStateDataNode { bool Parse(SyncParseState& state) { return
 struct CHeliHealthDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CHeliControlDataNode { bool Parse(SyncParseState& state) { return true; } };
 
-struct CObjectCreationDataNode { bool Parse(SyncParseState& state) { return true; } }
+struct CObjectCreationDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CObjectGameStateDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CObjectScriptGameStateDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CPhysicalHealthDataNode { bool Parse(SyncParseState& state) { return true; } };
@@ -1402,19 +1402,19 @@ struct SyncTree : public SyncTreeBase
 
 		auto sectorPosY =
 			(hasSpdn) ? secPosDataNode->m_posY :
-				(hasPspdn) ? playerSecPosDataNode->m_sectorPosY :
-					(hasOspdn) ? objectSecPosDataNode->m_sectorPosY :
-						(hasPspmdn) ? pedSecPosMapDataNode->m_sectorPosY :
-							(hasWpdn) ? projectileDataNode->m_sectorPosY :
-								(hasHpn) ? herdPosNode->m_posZ :
+				(hasPspdn) ? playerSecPosDataNode->m_posY :
+					(hasOspdn) ? objectSecPosDataNode->m_posY :
+						(hasPspmdn) ? pedSecPosMapDataNode->m_posY :
+							(hasWpdn) ? projectileDataNode->m_posY :
+								(hasHpn) ? herdPosNode->m_posY :
 									0.0f;
 
 		auto sectorPosZ =
 			(hasSpdn) ? secPosDataNode->m_posZ :
-				(hasPspdn) ? playerSecPosDataNode->m_sectorPosZ :
-					(hasOspdn) ? objectSecPosDataNode->m_sectorPosZ :
-						(hasPspmdn) ? pedSecPosMapDataNode->m_sectorPosZ :
-							(hasWpdn) ? projectileDataNode->m_sectorPosZ :
+				(hasPspdn) ? playerSecPosDataNode->m_posZ :
+					(hasOspdn) ? objectSecPosDataNode->m_posZ :
+						(hasPspmdn) ? pedSecPosMapDataNode->m_posZ :
+							(hasWpdn) ? projectileDataNode->m_posZ :
 								(hasHpn) ? herdPosNode->m_posZ :
 									0.0f;
 

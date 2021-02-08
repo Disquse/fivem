@@ -10,6 +10,7 @@
 #include <NetLibrary.h>
 
 #include <CloneManager.h>
+#include <CrossBuildRuntime.h>
 
 static ICoreGameInit* icgi;
 
@@ -20,7 +21,7 @@ static void(*g_orig_netObjectMgrBase__RegisterNetworkObject)(rage::netObjectMgr*
 
 static void netObjectMgrBase__RegisterNetworkObject(rage::netObjectMgr* manager, rage::netObject* object)
 {
-	CD_AllocateSyncData(object->objectId);
+	CD_AllocateSyncData(object->GetObjectId());
 
 	if (!icgi->OneSyncEnabled)
 	{
@@ -60,7 +61,7 @@ void ObjectIds_ReturnObjectId(uint16_t objectId);
 
 static void netObjectMgrBase__DestroyNetworkObject(rage::netObjectMgr* manager, rage::netObject* object)
 {
-	CD_FreeSyncData(object->objectId);
+	CD_FreeSyncData(object->GetObjectId());
 
 	if (!icgi->OneSyncEnabled)
 	{
@@ -151,8 +152,7 @@ static HookFunction hookFunction([]()
 	MH_CreateHook(hook::get_pattern("44 38 33 75 30 66 44", -0x40), netObjectMgrBase__GetNetworkObject, (void**)&g_orig_netObjectMgrBase__GetNetworkObject); //
 	MH_CreateHook(hook::get_pattern("41 80 78 ? FF 74 2D 41 0F B6 40"), netObjectMgrBase__GetNetworkObjectForPlayer, (void**)& g_orig_netObjectMgrBase__GetNetworkObjectForPlayer);
 #elif IS_RDR3
-	// for 1207: MH_CreateHook(hook::get_pattern("0F B7 52 ? 48 8B E9 E8 ? ? ? ? 48 85 C0", -0x21), netObjectMgrBase__RegisterNetworkObject, (void**)&g_orig_netObjectMgrBase__RegisterNetworkObject);
-	MH_CreateHook(hook::get_pattern("41 0F B7 55 00 41 B0 01 48 8B E9 E8", -0x27), netObjectMgrBase__RegisterNetworkObject, (void**)&g_orig_netObjectMgrBase__RegisterNetworkObject); //
+	MH_CreateHook(hook::get_pattern("41 0F B7 55 00 41 B0 01 48 8B E9 E8",  xbr::IsGameBuildOrGreater<1355>() ? -0x20 : -0x27), netObjectMgrBase__RegisterNetworkObject, (void**)&g_orig_netObjectMgrBase__RegisterNetworkObject); //
 	MH_CreateHook(hook::get_pattern("45 33 FF C1 E8 03 48 8B F2 48 8B E9 A8 01", -0x24), netObjectMgrBase__DestroyNetworkObject, (void**)&g_orig_netObjectMgrBase__DestroyNetworkObject); //
 	MH_CreateHook(hook::get_pattern("41 83 F9 04 75 ? 8D 4B 20 E8 ? ? ? ? 48", -0x31), netObjectMgrBase__ChangeOwner, (void**)&g_orig_netObjectMgrBase__ChangeOwner); //
 	MH_CreateHook(hook::get_pattern("45 8A F0 0F B7 F2 E8 ? ? ? ? 33 DB 38", -0x24), netObjectMgrBase__GetNetworkObject, (void**)&g_orig_netObjectMgrBase__GetNetworkObject); //

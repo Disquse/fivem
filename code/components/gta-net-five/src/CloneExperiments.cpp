@@ -1437,23 +1437,37 @@ static void UnkEventMgr(void* mgr, void* ply)
 	}
 }
 
-static void*(*g_origNetworkObjectMgrCtor)(void*, void*);
+#ifdef GTA_FIVE
+static void* (*g_origNetworkObjectMgrCtor)(void*, void*);
 
 static void* NetworkObjectMgrCtorStub(void* mgr, void* bw)
 {
 	auto alloc = rage::GetAllocator();
 	alloc->Free(mgr);
 
-#ifdef GTA_FIVE
 	mgr = alloc->Allocate(32712 + 4096, 16, 0);
-#elif IS_RDR3
-	mgr = alloc->Allocate(163056 + 4096, 16, 0);
-#endif
 
 	g_origNetworkObjectMgrCtor(mgr, bw);
 
 	return mgr;
 }
+#elif IS_RDR3
+static void* (*g_origNetworkObjectMgrCtor)(void*, void*, void*);
+
+static void* NetworkObjectMgrCtorStub(void* mgr, void* bw, void* unk)
+{
+	auto alloc = rage::GetAllocator();
+	alloc->Free(mgr);
+
+	int initialSize = (xbr::IsGameBuildOrGreater<1355>()) ? 268672 : 163056;
+
+	mgr = alloc->Allocate(initialSize + 4096, 16, 0);
+
+	g_origNetworkObjectMgrCtor(mgr, bw, unk);
+
+	return mgr;
+}
+#endif
 
 static HookFunction hookFunction([]()
 {
@@ -1513,7 +1527,7 @@ static HookFunction hookFunction([]()
 	MH_CreateHook(hook::get_pattern("4C 8B F1 41 BD 05", -0x22), PassObjectControlStub, (void**)&g_origPassObjectControl);
 	MH_CreateHook(hook::get_pattern("8A 41 49 4C 8B F2 48 8B", -0x10), SetOwnerStub, (void**)&g_origSetOwner);
 #elif IS_RDR3
-	MH_CreateHook(hook::get_pattern("48 8B D9 E8 ? ? ? ? 33 D2 66", -0x6), NetworkObjectMgrCtorStub, (void**)&g_origNetworkObjectMgrCtor);
+	MH_CreateHook(hook::get_pattern("48 8B D9 E8 ? ? ? ? 33 ? 66 C7 83", xbr::IsGameBuildOrGreater<1355>() ? -0xA : -0x6), NetworkObjectMgrCtorStub, (void**)&g_origNetworkObjectMgrCtor);
 	MH_CreateHook(hook::get_pattern("83 FE 01 41 0F 9F C4 48 85 DB 74", -0x38), PassObjectControlStub, (void**)&g_origPassObjectControl);
 	MH_CreateHook(hook::get_pattern("80 79 ? ? 48 8B F2 48 8B F9 73", -0xF), SetOwnerStub, (void**)&g_origSetOwner);
 #endif
@@ -1522,9 +1536,12 @@ static HookFunction hookFunction([]()
 	// REDM1S: unknown player related array
 	MH_CreateHook(hook::get_pattern("84 C0 74 ? 88 1D ? ? ? ? EB", -0x14), SetUnknownArrayIndex, (void**)&g_origSetUnknownArrayIndex);
 
+#if 0
+	// TODO1355: crashing :(
 	// REDM1S: unknown speech events causes crashes
-	MH_CreateHook((void*)0x142F66458, SendUnkSpeechEvent, (void**)&g_origSendUnkSpeechEvent);
-	MH_CreateHook((void*)0x142F6651C, SendUnkSpeechEvent2, (void**)&g_origSendUnkSpeechEvent2);
+	MH_CreateHook(hook::get_pattern("0F 84 ? ? ? ? 49 8B C9 44", -0x2A), SendUnkSpeechEvent, (void**)&g_origSendUnkSpeechEvent);
+	MH_CreateHook(hook::get_pattern("49 8B C8 48 85 FF 74 ? 44 38", -0x24), SendUnkSpeechEvent2, (void**)&g_origSendUnkSpeechEvent2);
+#endif
 #endif
 
 	// scriptHandlerMgr::ManageHostMigration, has fixed 32 player array and isn't needed* for 1s
@@ -1546,7 +1563,7 @@ static HookFunction hookFunction([]()
 #ifdef GTA_FIVE
 	MH_CreateHook(hook::get_pattern("0F 29 70 C8 0F 28 F1 33 DB 45", -0x1C), GetPlayersNearPoint, (void**)&g_origGetPlayersNearPoint);
 #elif IS_RDR3
-	MH_CreateHook((void*)0x142310A68, GetPlayersNearPoint, (void**)&g_origGetPlayersNearPoint);
+	MH_CreateHook(hook::get_pattern("33 DB 0F 29 70 D8 49 8B F9 4D 8B F0", -0x1B), GetPlayersNearPoint, (void**)&g_origGetPlayersNearPoint);
 #endif
 
 	// func that reads neteventmgr by player idx, crashes page heap
@@ -1763,7 +1780,7 @@ static HookFunction hookFunction([]()
 #ifdef GTA_FIVE
 	hook::call(hook::get_pattern("48 C1 EA 04 E8 ? ? ? ? 48 8B 03", 17), delStub.GetCode());
 #elif IS_RDR3
-	hook::call(hook::get_pattern("48 C1 EA 04 E8 ? ? ? ? 48 8B 06", 17), delStub.GetCode());
+	hook::call(hook::get_pattern("48 8B 06 BA 01 00 00 00 48 8B CE FF 10 48 8B 5C 24 50", 8), delStub.GetCode());
 #endif
 
 	// clobber nodes for all players, not just when connected to netplayermgr
@@ -2865,16 +2882,16 @@ static bool (*g_origInitializeTime)(void* timeSync, void* connectionMgr, int fla
 
 static bool g_initedTimeSync;
 
+struct EmptyStruct
+{
+
+};
+
 #ifdef GTA_FIVE
 struct ExtraAddressData
 {
 	uint32_t addr;
 	uint16_t port;
-};
-
-struct EmptyStruct
-{
-
 };
 
 template<bool Enable>
@@ -3013,7 +3030,8 @@ public:
 private:
 	void* m_vtbl; // 0
 	void* m_connectionMgr; // 8
-	struct {
+	struct
+	{
 		uint32_t m_int1;
 		uint16_t m_short1;
 		uint32_t m_int2;
@@ -3022,7 +3040,8 @@ private:
 	} m_trustAddr; // 16
 	uint32_t m_sessionKey; // 32
 	int32_t m_timeDelta; // 36
-	struct {
+	struct
+	{
 		void* self;
 		void* cb;
 	} messageDelegate; // 40
@@ -3041,24 +3060,17 @@ private:
 	uint8_t m_applyFlags; // 132
 	uint8_t m_disabled; // 133
 };
-
-template<int Build>
-static netTimeSync<Build>** g_netTimeSync;
-
-template<int Build>
-bool netTimeSync__InitializeTimeStub(netTimeSync<Build>* timeSync, void* connectionMgr, int flags, void* trustHost,
-	uint32_t sessionSeed, int* deltaStart, int packetFlags, int initialBackoff, int maxBackoff)
-{
-	if (!icgi->OneSyncEnabled)
-	{
-		return g_origInitializeTime(timeSync, connectionMgr, flags, trustHost, sessionSeed, deltaStart, packetFlags, initialBackoff, maxBackoff);
-	}
-
-	timeSync->SetConnectionManager(connectionMgr);
-
-	return true;
-}
 #elif IS_RDR3
+struct ExtraPaddingData
+{
+	char extra_padding[24];
+};
+
+template<bool Enable>
+using ExtraPadding = std::conditional_t<Enable, ExtraPaddingData, EmptyStruct>;
+
+
+template<int Build>
 class netTimeSync
 {
 public:
@@ -3196,7 +3208,8 @@ public:
 	void* m_connectionMgr; // +8
 	uint32_t m_unkTrust; // +16
 	uint32_t m_sessionKey; // +20
-	char m_pad_24[48]; // +24
+	char m_pad_24[44]; // +24
+	ExtraPadding<(Build >= 1355)> m_pad_72;
 	uint32_t m_nextSync; // +72
 	uint32_t m_configTimeBetweenSyncs; // +76
 	uint32_t m_configMaxBackoff; // +80, usually 60000
@@ -3215,10 +3228,13 @@ public:
 	uint8_t m_disabled; // +150
 	uint8_t m_useCloudTime; // +151
 };
+#endif
 
-static netTimeSync** g_netTimeSync;
+template<int Build>
+static netTimeSync<Build>** g_netTimeSync;
 
-bool netTimeSync__InitializeTimeStub(netTimeSync* timeSync, void* connectionMgr, int flags, void* trustHost,
+template<int Build>
+bool netTimeSync__InitializeTimeStub(netTimeSync<Build>* timeSync, void* connectionMgr, int flags, void* trustHost,
 	uint32_t sessionSeed, int* deltaStart, int packetFlags, int initialBackoff, int maxBackoff)
 {
 	if (!icgi->OneSyncEnabled)
@@ -3230,7 +3246,6 @@ bool netTimeSync__InitializeTimeStub(netTimeSync* timeSync, void* connectionMgr,
 
 	return true;
 }
-#endif
 
 bool IsWaitingForTimeSync()
 {
@@ -3242,7 +3257,12 @@ bool IsWaitingForTimeSync()
 
 	return !(*g_netTimeSync<1604>)->IsInitialized();
 #elif IS_RDR3
-	return !(*g_netTimeSync)->IsInitialized();
+	if (xbr::IsGameBuildOrGreater<1355>())
+	{
+		return !(*g_netTimeSync<1355>)->IsInitialized();
+	}
+
+	return !(*g_netTimeSync<1311>)->IsInitialized();
 #endif
 }
 
@@ -3264,7 +3284,14 @@ static InitFunction initFunctionTime([]()
 				(*g_netTimeSync<1604>)->HandleTimeSync(buf);
 			}
 #elif IS_RDR3
-			(*g_netTimeSync)->HandleTimeSync(buf);
+			if (xbr::IsGameBuildOrGreater<1355>())
+			{
+				(*g_netTimeSync<1355>)->HandleTimeSync(buf);
+			}
+			else
+			{
+				(*g_netTimeSync<1311>)->HandleTimeSync(buf);
+			}
 #endif
 		});
 	});
@@ -3278,7 +3305,8 @@ static HookFunction hookFunctionTime([]()
 	void* func = (xbr::IsGameBuildOrGreater<2060>()) ? (void*)&netTimeSync__InitializeTimeStub<2060> : &netTimeSync__InitializeTimeStub<1604>;
 	MH_CreateHook(hook::get_pattern("48 8B D9 48 39 79 08 0F 85 ? ? 00 00 41 8B E8", -32), func, (void**)&g_origInitializeTime);
 #elif IS_RDR3
-	MH_CreateHook(hook::get_pattern("48 89 51 08 41 83 F8 02 44 0F 45 C8", -49), netTimeSync__InitializeTimeStub, (void**)&g_origInitializeTime);
+	void* func = (xbr::IsGameBuildOrGreater<1355>()) ? (void*)&netTimeSync__InitializeTimeStub<1355> : &netTimeSync__InitializeTimeStub<1311>;
+	MH_CreateHook(hook::get_pattern("48 89 51 08 41 83 F8 02 44 0F 45 C8", -49), func, (void**)&g_origInitializeTime);
 #endif
 
 	MH_EnableHook(MH_ALL_HOOKS);
@@ -3293,7 +3321,16 @@ static HookFunction hookFunctionTime([]()
 		g_netTimeSync<1604> = hook::get_address<netTimeSync<1604>**>(hook::get_pattern("EB 16 48 8B 0D ? ? ? ? 45 33 C9 45 33 C0", 5));
 	}
 #elif IS_RDR3
-	g_netTimeSync = hook::get_address<netTimeSync**>(hook::get_pattern("4C 8D 45 50 41 03 C7 44 89 6D 50 89", -4));
+	auto location = hook::get_pattern("4C 8D 45 50 41 03 C7 44 89 6D 50 89", -4);
+
+	if (xbr::IsGameBuildOrGreater<1355>())
+	{
+		g_netTimeSync<1355> = hook::get_address<netTimeSync<1355>**>(location);
+	}
+	else
+	{
+		g_netTimeSync<1311> = hook::get_address<netTimeSync<1311>**>(location);
+	}
 #endif
 
 	OnMainGameFrame.Connect([]()
@@ -3308,7 +3345,14 @@ static HookFunction hookFunctionTime([]()
 			(*g_netTimeSync<1604>)->Update();
 		}
 #elif IS_RDR3
-		(*g_netTimeSync)->Update();
+		if (xbr::IsGameBuildOrGreater<1355>())
+		{
+			(*g_netTimeSync<1355>)->Update();
+		}
+		else
+		{
+			(*g_netTimeSync<1311>)->Update();
+		}
 #endif
 	});
 });
