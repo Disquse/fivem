@@ -1536,12 +1536,9 @@ static HookFunction hookFunction([]()
 	// REDM1S: unknown player related array
 	MH_CreateHook(hook::get_pattern("84 C0 74 ? 88 1D ? ? ? ? EB", -0x14), SetUnknownArrayIndex, (void**)&g_origSetUnknownArrayIndex);
 
-#if 0
-	// TODO1355: crashing :(
 	// REDM1S: unknown speech events causes crashes
 	MH_CreateHook(hook::get_pattern("0F 84 ? ? ? ? 49 8B C9 44", -0x2A), SendUnkSpeechEvent, (void**)&g_origSendUnkSpeechEvent);
-	MH_CreateHook(hook::get_pattern("49 8B C8 48 85 FF 74 ? 44 38", -0x24), SendUnkSpeechEvent2, (void**)&g_origSendUnkSpeechEvent2);
-#endif
+	MH_CreateHook(hook::get_pattern("49 8B C8 48 85 FF 74 ? 44 38", -0x37), SendUnkSpeechEvent2, (void**)&g_origSendUnkSpeechEvent2);
 #endif
 
 	// scriptHandlerMgr::ManageHostMigration, has fixed 32 player array and isn't needed* for 1s
