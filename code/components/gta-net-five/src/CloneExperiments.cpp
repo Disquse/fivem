@@ -1516,6 +1516,11 @@ static HookFunction hookFunction([]()
 	//hook::put<uint8_t>(hook::get_pattern("48 8D 05 ? ? ? ? BF 20 00 00 00 48 89 01", 8), 128);
 #endif
 
+	// RDR3 tasks sync hacks
+#ifdef IS_RDR3
+	hook::put<uint8_t>(hook::get_pattern("8B 0C 10 85 0A 75 ? 49 FF C0", 5), 0xEB);
+#endif
+
 	// 1604 unused, netobjmgr alloc size, temp dbg
 	// 1737 made this arxan
 	//hook::put<uint32_t>(0x14101CF4F, 32712 + 4096);
