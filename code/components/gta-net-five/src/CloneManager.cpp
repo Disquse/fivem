@@ -2048,10 +2048,8 @@ void CloneManagerLocal::Update()
 #ifdef GTA_FIVE
 			clone.second->Update();
 #elif IS_RDR3
-			// REDM1S: it seems that `DependencyThreadUpdate` calls post stuff itself when needed, figure out
 			clone.second->MainThreadUpdate();
 			clone.second->DependencyThreadUpdate();
-			clone.second->PostDependencyThreadUpdate();
 #endif
 
 #ifdef GTA_FIVE
