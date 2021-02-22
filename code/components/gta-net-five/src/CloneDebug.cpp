@@ -1519,7 +1519,6 @@ static HookFunction hookFunction([]()
 	hook::nop(hook::get_pattern("48 85 D2 74 06 48 8B 01 FF 50 30", 3), 2); // 0x142BD524F
 	hook::nop(hook::get_pattern("48 85 D2 74 06 48 8B 01 FF 50 40", 3), 2); // 0x142BD521F
 	hook::nop(hook::get_pattern("48 85 D2 74 0B 48 8B 01 F3 41", 3), 2); // 0x142BD551C
-	hook::nop(hook::get_pattern("4D 85 C9 0F 84 ? ? ? ? 8B 1A", 3), 5); // 0x142BD55A3 REDM1S: not sure if this one needs to be nopped
 	hook::nop(hook::get_pattern("4D 85 C9 74 0D 44 0F B6 02", 3), 2); // 0x142BD5770
 	hook::nop(hook::get_pattern("48 85 DB 74 34 44 0F B7 0A", 3), 2); // 0x142BD5445
 	hook::nop(hook::get_pattern("4D 85 C9 74 38 F3 0F 10 42 08", 3), 2); // 0x142BD5797
