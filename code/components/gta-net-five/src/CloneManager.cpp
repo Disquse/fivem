@@ -535,13 +535,10 @@ void CloneManagerLocal::ProcessSyncAck(uint16_t objId, uint16_t uniqifier)
 			auto syncTree = netObj->GetSyncTree();
 			syncTree->AckCfx(netObj, m_ackTimestamp);
 
-#ifdef GTA_FIVE
-			// REDM1S: crashes, it seems a valid player check was changed, anyway it's not needed anymore?
 			if (netObj->m_20())
 			{
 				_processAck(syncTree, netObj, 31, 0 /* seq? */, m_ackTimestamp, 0xFFFFFFFF);
 			}
-#endif
 		}
 	}
 }

@@ -74,8 +74,8 @@ public:
 	virtual void m_8() = 0;
 	virtual void m_10() = 0;
 	virtual void m_18() = 0;
-	virtual void m_28() = 0;
 	virtual void* m_20() = 0; // GetSyncData
+	virtual void m_28() = 0;
 	virtual netSyncTree* GetSyncTree() = 0;
 	virtual bool HasGameObject() = 0;
 	virtual void m_40() = 0;
