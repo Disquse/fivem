@@ -280,6 +280,13 @@ static hook::cdecl_stub<void(void*)> _pCtor([]()
 #endif
 });
 
+#ifdef IS_RDR3
+static hook::cdecl_stub<void(uint8_t)> _initUnkPlayerArray([]()
+{
+	return hook::get_pattern("80 F9 20 73 ? 53 48 83 EC 20 8A D9");
+});
+#endif
+
 namespace sync
 {
 #ifdef GTA_FIVE
@@ -387,6 +394,8 @@ namespace sync
 			idx = g_physIdx;
 			g_physIdx++;
 		}
+
+		_initUnkPlayerArray(idx);
 
 		player->physicalPlayerIndex() = idx;
 		g_players[idx] = player;
@@ -810,18 +819,6 @@ static void PassObjectControlStub(CNetGamePlayer* player, rage::netObject* netOb
 }
 
 #ifdef IS_RDR3
-static void*(*g_origSetUnknownArrayIndex)(rage::netPlayer* player, uint8_t index);
-
-static void* SetUnknownArrayIndex(rage::netPlayer* player, uint8_t index)
-{
-	if (!icgi->OneSyncEnabled)
-	{
-		return g_origSetUnknownArrayIndex(player, index);
-	}
-
-	return nullptr;
-}
-
 // REDM1S: those hooks are breaking npc speech events
 
 static void*(*g_origSendUnkSpeechEvent)(void* unk);
@@ -1538,9 +1535,6 @@ static HookFunction hookFunction([]()
 #endif
 
 #ifdef IS_RDR3
-	// REDM1S: unknown player related array
-	MH_CreateHook(hook::get_pattern("84 C0 74 ? 88 1D ? ? ? ? EB", -0x14), SetUnknownArrayIndex, (void**)&g_origSetUnknownArrayIndex);
-
 	// REDM1S: unknown speech events causes crashes
 	MH_CreateHook(hook::get_pattern("0F 84 ? ? ? ? 49 8B C9 44", -0x2A), SendUnkSpeechEvent, (void**)&g_origSendUnkSpeechEvent);
 	MH_CreateHook(hook::get_pattern("49 8B C8 48 85 FF 74 ? 44 38", -0x37), SendUnkSpeechEvent2, (void**)&g_origSendUnkSpeechEvent2);
