@@ -28,6 +28,8 @@ extern NetLibrary* g_netLibrary;
 
 #include <concurrentqueue.h>
 
+// REDM1S: not reviewed for RDR3, needs to return fwArchetype checks and ifdef some native calls
+
 class FxNativeInvoke
 {
 private:
@@ -358,9 +360,15 @@ static InitFunction initFunction([]()
 							case RpcConfiguration::ArgumentType::Hash:
 							{
 								uint32_t hash = buf->Read<int>();
+#ifndef IS_RDR3
 								rage::fwModelId idx; // unused
+#endif
 
-								if (native->GetRpcType() == RpcConfiguration::RpcType::EntityCreate || rage::fwArchetypeManager::GetArchetypeFromHashKey(hash, idx))
+								if (native->GetRpcType() == RpcConfiguration::RpcType::EntityCreate
+#ifndef IS_RDR3
+									|| rage::fwArchetypeManager::GetArchetypeFromHashKey(hash, idx)
+#endif
+								)
 								{
 									ntq->Enqueue([=]()
 									{
