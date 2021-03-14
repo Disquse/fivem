@@ -169,10 +169,10 @@ namespace rage
 		virtual void m_48() = 0;
 		virtual void m_50() = 0;
 		virtual void m_58() = 0;
-		virtual uint8_t GetUpdateFrequency(UpdateLevel level) = 0;
+		virtual void m_60() = 0;
 		virtual void m_68() = 0;
 		virtual void m_70() = 0;
-		virtual void m_78() = 0;
+		virtual uint8_t GetUpdateFrequency(UpdateLevel level) = 0;
 		virtual void m_80() = 0;
 		virtual void m_88() = 0;
 		virtual void m_90() = 0;

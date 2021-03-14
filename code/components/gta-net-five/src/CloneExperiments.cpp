@@ -4008,7 +4008,7 @@ static InitFunction initFunction([]()
 		}
 #endif
 		(*(void(__fastcall**)(void*, uint32_t))(*(uint64_t*)obj + 0x260))(obj, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp());
-		(*(void(__fastcall**)(void*, uint32_t))(*(uint64_t*)(obj->GetBlender()) + 0x38))(obj->GetBlender(), 0);
+		//(*(void(__fastcall**)(void*, uint32_t))(*(uint64_t*)(obj->GetBlender()) + 0x38))(obj->GetBlender(), 0);
 
 		(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x248))(obj);
 		st->ApplyToObject(obj, nullptr);
