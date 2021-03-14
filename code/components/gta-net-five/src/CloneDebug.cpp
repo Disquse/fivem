@@ -719,8 +719,9 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 				// write Cfx length placeholder
 				if (node->IsDataNode())
 				{
-					// REDM1S: comment this if you want to use cloning natives
+#ifndef ONESYNC_CLONING_NATIVES
 					buffer->WriteUns(0, sizeLength);
+#endif
 				}
 			}
 
@@ -942,8 +943,9 @@ bool netSyncTree::WriteTreeCfx(int flags, int objFlags, rage::netObject* object,
 
 					if (state.pass == 2)
 					{
-						// REDM1S: comment this if you want to use cloning natives
+#ifndef ONESYNC_CLONING_NATIVES
 						buffer->WriteUns(length, sizeLength);
+#endif
 					}
 				}
 

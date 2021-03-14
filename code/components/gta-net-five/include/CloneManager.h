@@ -2,6 +2,9 @@
 
 #include <unordered_set>
 
+// REDM1S: uncomment this to enable cloning natives, remove this hack later.
+//#define ONESYNC_CLONING_NATIVES
+
 class NetLibrary;
 
 namespace rage
