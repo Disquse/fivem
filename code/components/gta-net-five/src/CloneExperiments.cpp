@@ -810,12 +810,12 @@ static void PassObjectControlStub(CNetGamePlayer* player, rage::netObject* netOb
 	}
 #endif
 
-	//auto lastIndex = player->physicalPlayerIndex;
-	//player->physicalPlayerIndex = 31;
+	//auto lastIndex = player->physicalPlayerIndex();
+	//player->physicalPlayerIndex() = 31;
 
 	g_origPassObjectControl(player, netObject, a3);
 
-	//player->physicalPlayerIndex = lastIndex;
+	//player->physicalPlayerIndex() = lastIndex;
 }
 
 static void(*g_origSetOwner)(rage::netObject* object, CNetGamePlayer* newOwner);
@@ -1708,7 +1708,7 @@ static HookFunction hookFunction([]()
 #ifdef GTA_FIVE
 	hook::put<uint8_t>(hook::get_pattern("75 29 48 8B 02 48 8B CA FF 50 30"), 0xEB);
 #elif IS_RDR3
-	hook::put<uint8_t>(hook::get_pattern("75 29 48 8B 06 48 8B CE FF"), 0xEB);
+	hook::put<uint8_t>(hook::get_pattern("75 29 48 8B 06 48 8B CE FF 50 60"), 0xEB);
 #endif
 
 	// delete objects from clonemgr before deleting them
