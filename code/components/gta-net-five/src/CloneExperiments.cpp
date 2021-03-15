@@ -818,34 +818,6 @@ static void PassObjectControlStub(CNetGamePlayer* player, rage::netObject* netOb
 	//player->physicalPlayerIndex = lastIndex;
 }
 
-#ifdef IS_RDR3
-// REDM1S: those hooks are breaking npc speech events
-
-static void*(*g_origSendUnkSpeechEvent)(void* unk);
-
-static void* SendUnkSpeechEvent(void* unk)
-{
-	if (!icgi->OneSyncEnabled)
-	{
-		return g_origSendUnkSpeechEvent(unk);
-	}
-
-	return nullptr;
-}
-
-static void* (*g_origSendUnkSpeechEvent2)(void* unk);
-
-static void* SendUnkSpeechEvent2(void* unk)
-{
-	if (!icgi->OneSyncEnabled)
-	{
-		return g_origSendUnkSpeechEvent2(unk);
-	}
-
-	return nullptr;
-}
-#endif
-
 static void(*g_origSetOwner)(rage::netObject* object, CNetGamePlayer* newOwner);
 
 static void SetOwnerStub(rage::netObject* netObject, CNetGamePlayer* newOwner)
@@ -1534,12 +1506,6 @@ static HookFunction hookFunction([]()
 	MH_CreateHook(hook::get_pattern("80 79 ? ? 48 8B F2 48 8B F9 73", -0xF), SetOwnerStub, (void**)&g_origSetOwner);
 #endif
 
-#ifdef IS_RDR3
-	// REDM1S: unknown speech events causes crashes
-	MH_CreateHook(hook::get_pattern("0F 84 ? ? ? ? 49 8B C9 44", -0x2A), SendUnkSpeechEvent, (void**)&g_origSendUnkSpeechEvent);
-	MH_CreateHook(hook::get_pattern("49 8B C8 48 85 FF 74 ? 44 38", -0x37), SendUnkSpeechEvent2, (void**)&g_origSendUnkSpeechEvent2);
-#endif
-
 	// scriptHandlerMgr::ManageHostMigration, has fixed 32 player array and isn't needed* for 1s
 #ifdef GTA_FIVE
 	MH_CreateHook(hook::get_pattern("01 4F 60 81 7F 60 D0 07 00 00 0F 8E", -0x47), ManageHostMigrationStub, (void**)&g_origManageHostMigration);
@@ -1555,7 +1521,6 @@ static HookFunction hookFunction([]()
 	MH_CreateHook(hook::get_pattern("48 83 EC ? 8A 05 ? ? ? ? 33 DB 0F 29 74 24 60", -6), UnkBubbleWrap, (void**)&g_origUnkBubbleWrap);
 #endif
 
-	// REDM1S: find in RDR3, could be 0x14229CB38 1207.58
 #ifdef GTA_FIVE
 	MH_CreateHook(hook::get_pattern("0F 29 70 C8 0F 28 F1 33 DB 45", -0x1C), GetPlayersNearPoint, (void**)&g_origGetPlayersNearPoint);
 #elif IS_RDR3
@@ -2659,9 +2624,6 @@ static HookFunction hookFunctionEv([]()
 #include <nutsnbolts.h>
 #include <GameInit.h>
 
-static char(*g_origWriteDataNode)(void* node, uint32_t flags, void* mA0, rage::netObject* object, rage::datBitBuffer* buffer, int time, void* playerObj, char playerId, void* unk);
-
-
 struct VirtualBase
 {
 	virtual ~VirtualBase() {}
@@ -2725,6 +2687,9 @@ static bool ReadDataNodeStub(void* node, uint32_t flags, void* mA0, rage::datBit
 	return didRead;
 }
 
+#ifdef GTA_FIVE
+static char(*g_origWriteDataNode)(void* node, uint32_t flags, void* mA0, rage::netObject* object, rage::datBitBuffer* buffer, int time, void* playerObj, char playerId, void* unk);
+
 static bool WriteDataNodeStub(void* node, uint32_t flags, void* mA0, rage::netObject* object, rage::datBitBuffer* buffer, int time, void* playerObj, char playerId, void* unk)
 {
 	if (!icgi->OneSyncEnabled)
@@ -2772,6 +2737,57 @@ static bool WriteDataNodeStub(void* node, uint32_t flags, void* mA0, rage::netOb
 		return rv;
 	}
 }
+#elif IS_RDR3
+static char(*g_origWriteDataNode)(void* node, uint32_t flags, uint32_t objectFlags, rage::netObject* object, rage::datBitBuffer* buffer, void* playerObj, char playerId, void* a8, void* unk);
+
+static bool WriteDataNodeStub(void* node, uint32_t flags, uint32_t objectFlags, rage::netObject* object, rage::datBitBuffer* buffer, void* playerObj, char playerId, void* a8, void* unk)
+{
+	if (!icgi->OneSyncEnabled)
+	{
+		return g_origWriteDataNode(node, flags, objectFlags, object, buffer, playerObj, playerId, a8, unk);
+	}
+
+	if (playerId != 31 || flags == 4)
+	{
+		return g_origWriteDataNode(node, flags, objectFlags, object, buffer, playerObj, playerId, a8, unk);
+	}
+	else
+	{
+		// save position and write a placeholder length frame
+		uint32_t position = buffer->GetPosition();
+		buffer->WriteBit(false);
+		buffer->WriteUns(0, 11);
+
+		bool rv = g_origWriteDataNode(node, flags, objectFlags, object, buffer, playerObj, playerId, a8, unk);
+
+		// write the actual length on top of the position
+		uint32_t endPosition = buffer->GetPosition();
+		auto length = endPosition - position - 11 - 1;
+
+		if (length > 1 || flags == 1)
+		{
+			buffer->Seek(position);
+
+			buffer->WriteBit(true);
+			buffer->WriteUns(length, 11);
+			buffer->Seek(endPosition);
+
+			if (g_curNetObject)
+			{
+				g_netObjectNodeMapping[g_curNetObject->GetObjectId()][node] = { 1, rage::netInterface_queryFunctions::GetInstance()->GetTimestamp() };
+			}
+
+			//trace("actually wrote %s\n", GetType(node));
+		}
+		else
+		{
+			buffer->Seek(position + 1);
+		}
+
+		return rv;
+	}
+}
+#endif
 
 static void(*g_origUpdateSyncDataOn108)(void* node, void* object);
 
