@@ -1392,7 +1392,8 @@ void ServerGameState::Tick(fx::ServerInstanceBase* instance)
 
 							if (!hasCreatedPlayer)
 							{
-								int slotId = 127;
+								// REDM1S: cache GameServer component?
+								int slotId = (m_instance->GetComponent<fx::GameServer>()->GetGameName() == fx::GameName::GTA5) ? 127 : 15;
 
 								for (; slotId >= 0; slotId--)
 								{
