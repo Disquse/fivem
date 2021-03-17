@@ -5,29 +5,41 @@
 #include <netSyncTree.h>
 
 #include <atPool.h>
+#include <Pool.h>
 
 using TCreateCloneObjFn = rage::netObject* (*)(uint16_t objectId, uint8_t, int, int);
+using TPoolPtr = atPoolBase*;
+
 static TCreateCloneObjFn createCloneFuncs[(int)NetObjEntityType::Max];
-
-// REDM1S: pool checks
-
-#if 0
-using TPoolPtr = atPoolBase**;
 static TPoolPtr validatePools[(int)NetObjEntityType::Max];
-#endif
+static uint32_t validatePoolHashes[(int)NetObjEntityType::Max];
+
+static TPoolPtr GetValidatePool(int type)
+{
+	if (!validatePools[type])
+	{
+		auto poolHash = validatePoolHashes[type];
+		auto poolPtr = rage::GetPoolBase(poolHash);
+		validatePools[type] = poolPtr;
+	}
+
+	return validatePools[type];
+}
 
 namespace rage
 {
 netObject* CreateCloneObject(NetObjEntityType type, uint16_t objectId, uint8_t a2, int a3, int a4)
 {
-#if 0
-	auto pool = *validatePools[(int)type];
+	auto pool = GetValidatePool((int)type);
 
 	if (pool->GetCountDirect() >= pool->GetSize())
 	{
+#ifdef _DEBUG
+		trace("CreateCloneObject - pool for %d (%d) is overloaded (%d of %d)\n", (int)type, objectId, pool->GetCountDirect(), pool->GetSize());
+#endif
+
 		return nullptr;
 	}
-#endif
 
 	return createCloneFuncs[(int)type](objectId, a2, a3, a4);
 }
@@ -67,4 +79,35 @@ static HookFunction hookFunction([]()
 	createCloneFuncs[(int)NetObjEntityType::PedGroup] = (TCreateCloneObjFn)hook::get_call(location + 0xC76);
 	createCloneFuncs[(int)NetObjEntityType::Guardzone] = (TCreateCloneObjFn)hook::get_call(location + 0xCEA);
 	createCloneFuncs[(int)NetObjEntityType::Incident] = (TCreateCloneObjFn)hook::get_call(location + 0xD56);
+
+	validatePoolHashes[(int)NetObjEntityType::Animal] = 0xB040F3A2;
+	validatePoolHashes[(int)NetObjEntityType::Automobile] = 0x365AB39F;
+	validatePoolHashes[(int)NetObjEntityType::Bike] = 0x365AB39F;
+	validatePoolHashes[(int)NetObjEntityType::Boat] = 0x365AB39F;
+	validatePoolHashes[(int)NetObjEntityType::Door] = 0x3C787BB2;
+	validatePoolHashes[(int)NetObjEntityType::Heli] = 0x365AB39F;
+	validatePoolHashes[(int)NetObjEntityType::Object] = 0xB81C53E2;
+	validatePoolHashes[(int)NetObjEntityType::Ped] = 0xB040F3A2;
+	validatePoolHashes[(int)NetObjEntityType::Pickup] = 0x1CBCE31C;
+	validatePoolHashes[(int)NetObjEntityType::PickupPlacement] = 0xF120209C;
+	validatePoolHashes[(int)NetObjEntityType::Plane] = 0x365AB39F;
+	validatePoolHashes[(int)NetObjEntityType::Submarine] = 0x365AB39F;
+	validatePoolHashes[(int)NetObjEntityType::Player] = 0x886B3327;
+	validatePoolHashes[(int)NetObjEntityType::Trailer] = 0x365AB39F;
+	validatePoolHashes[(int)NetObjEntityType::Train] = 0x365AB39F;
+	validatePoolHashes[(int)NetObjEntityType::DraftVeh] = 0xF05E4D7D;
+	validatePoolHashes[(int)NetObjEntityType::StatsTracker] = 0x1EA58E5F;
+	validatePoolHashes[(int)NetObjEntityType::PropSet] = 0xB80C0BF9;
+	validatePoolHashes[(int)NetObjEntityType::AnimScene] = 0xD900F3E9;
+	validatePoolHashes[(int)NetObjEntityType::GroupScenario] = 0x5EA00FF2;
+	validatePoolHashes[(int)NetObjEntityType::Herd] = 0x63600CEB;
+	validatePoolHashes[(int)NetObjEntityType::Horse] = 0xB040F3A2;
+	validatePoolHashes[(int)NetObjEntityType::WorldState] = 0x781C9E02;
+	validatePoolHashes[(int)NetObjEntityType::WorldProjectile] = 0x2F013899;
+	validatePoolHashes[(int)NetObjEntityType::Incident] = 0x8069B054;
+	validatePoolHashes[(int)NetObjEntityType::Guardzone] = 0x5CFB677C;
+	validatePoolHashes[(int)NetObjEntityType::PedGroup] = 0x5CFB677C;
+	validatePoolHashes[(int)NetObjEntityType::CombatDirector] = 0x212D594D;
+	validatePoolHashes[(int)NetObjEntityType::PedSharedTargeting] = 0xD0228BA4;
+	validatePoolHashes[(int)NetObjEntityType::Persistent] = 0xE9B12BBE;
 });
