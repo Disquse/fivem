@@ -1204,6 +1204,8 @@ bool CloneManagerLocal::HandleCloneCreate(const msgClone& msg)
 	// register with object mgr
 	rage::netObjectMgr::GetInstance()->RegisterNetworkObject(obj);
 
+	// REDM1S: merge this part of code, get rid of offsets, check if can remove some calls.
+
 #ifdef GTA_FIVE
 	// initialize blend
 	if (obj->GetBlender())
@@ -1218,17 +1220,23 @@ bool CloneManagerLocal::HandleCloneCreate(const msgClone& msg)
 
 	obj->m_1C0();
 #elif IS_RDR3
-	(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x250))(obj);
 
-	if ((*(unsigned __int8(__fastcall**)(void*))(*(uint64_t*)obj + 0x280))(obj))
+	if (obj->GetBlender())
 	{
-		obj->GetBlender()->m_70();
+		(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x250))(obj);
+
+		if ((*(unsigned __int8(__fastcall**)(void*))(*(uint64_t*)obj + 0x280))(obj))
+		{
+			obj->GetBlender()->m_70();
+		}
+
+		(*(void(__fastcall**)(void*, uint32_t))(*(uint64_t*)obj + 0x260))(obj, msg.GetTimestamp());
+
+		(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x240))(obj);
+
+		obj->GetBlender()->ApplyBlend();
+		obj->GetBlender()->m_38();
 	}
-
-	obj->GetBlender()->ApplyBlend();
-	obj->GetBlender()->m_38();
-
-	(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x240))(obj);
 #endif
 
 	// for the last time, ensure it's not local
