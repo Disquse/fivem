@@ -3586,6 +3586,10 @@ static HookFunction hookFunctionWorldGrid([]()
 	hook::jump(hook::get_pattern("48 8D 4C 24 30 45 33 C9 C6", -0x30), DoesLocalPlayerOwnWorldGrid);
 
 	hook::jump(hook::get_pattern(((xbr::IsGameBuildOrGreater<2060>()) ? "BE 01 00 00 00 8B E8 85 C0 0F 84 B8" : "BE 01 00 00 00 45 33 C9 40 88 74 24 20"), ((xbr::IsGameBuildOrGreater<2060>()) ? -0x3A : -0x2D)), DoesLocalPlayerOwnWorldGrid);
+#elif IS_RDR3
+	hook::jump(hook::get_pattern("0F 28 01 4C 8D 44 24 30 0F", -0xA), DoesLocalPlayerOwnWorldGrid);
+
+	hook::jump(hook::get_pattern("48 83 EC 40 0F 29 78 D8 0F", -0x19), DoesLocalPlayerOwnWorldGrid);
 #endif
 
 	MH_Initialize();
