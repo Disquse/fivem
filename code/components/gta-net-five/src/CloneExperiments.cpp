@@ -3589,7 +3589,7 @@ static HookFunction hookFunctionWorldGrid([]()
 #elif IS_RDR3
 	hook::jump(hook::get_pattern("0F 28 01 4C 8D 44 24 30 0F", -0xA), DoesLocalPlayerOwnWorldGrid);
 
-	hook::jump(hook::get_pattern("48 83 EC 40 0F 29 78 D8 0F", -0x19), DoesLocalPlayerOwnWorldGrid);
+	// REDM1S: more world grid patches?
 #endif
 
 	MH_Initialize();
