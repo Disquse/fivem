@@ -735,12 +735,7 @@ static CNetGamePlayer*(*g_origAllocateNetPlayer)(void*);
 
 static CNetGamePlayer* AllocateNetPlayer(void* mgr)
 {
-	// REDM1S: crashes if you try to allocate fake player for local player
-	if (!icgi->OneSyncEnabled
-#ifdef IS_RDR3
-		|| mgr != nullptr
-#endif
-	)
+	if (!icgi->OneSyncEnabled)
 	{
 		return g_origAllocateNetPlayer(mgr);
 	}
@@ -751,7 +746,14 @@ static CNetGamePlayer* AllocateNetPlayer(void* mgr)
 	void* plr = malloc(2784); // for 1207: 2640
 #endif
 
-	return _netPlayerCtor(plr);
+	auto player = _netPlayerCtor(plr);
+
+	// in RDR3 game wants CNetworkPlayerMgr pointer in CNetGamePlayer
+#ifdef IS_RDR3
+	*(rage::netPlayerMgrBase**)((uint64_t)player + 288) = g_playerMgr;
+#endif
+
+	return player;
 }
 
 #include <minhook.h>
