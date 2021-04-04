@@ -1905,9 +1905,9 @@ namespace rage
 		virtual void m_68() = 0;
 
 		virtual void m_70() = 0;
+#endif
 
 		virtual void m_78() = 0;
-#endif
 
 		virtual bool Equals(const netGameEvent* event) = 0;
 
