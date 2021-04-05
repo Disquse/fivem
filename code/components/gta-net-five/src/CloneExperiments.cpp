@@ -1627,7 +1627,7 @@ static HookFunction hookFunction([]()
 	MH_CreateHook(hook::get_pattern("80 3D ? ? ? ? 00 75 ? 85 C9 0F 94 C0 EB", -0x9), IsNetworkPlayerConnected, (void**)&g_origIsNetworkPlayerConnected);
 #endif
 
-	MH_CreateHook(hook::get_pattern("84 C0 74 0B 8A 9F ? ? 00 00", -0x14), netPlayer_IsActiveStub, (void**)&g_origNetPlayer_IsActive);
+	//MH_CreateHook(hook::get_pattern("84 C0 74 0B 8A 9F ? ? 00 00", -0x14), netPlayer_IsActiveStub, (void**)&g_origNetPlayer_IsActive);
 
 	{
 #ifdef GTA_FIVE

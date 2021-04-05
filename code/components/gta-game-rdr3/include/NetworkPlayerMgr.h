@@ -35,11 +35,11 @@ namespace rage
 	public:
 		virtual ~netPlayer() = 0;
 
-		virtual void Reset() = 0;
+		virtual void Init(rage::netNatType natType) = 0;
 
 		virtual void Init(rage::rlRosPlayerAccountId const& accountId, uint32_t, rage::netNatType natType) = 0;
 
-		virtual void Shutdown() = 0;
+		virtual void Reset() = 0; // Shutdown
 
 		virtual void IsPhysical() = 0;
 
