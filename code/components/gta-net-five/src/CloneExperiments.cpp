@@ -2913,7 +2913,7 @@ static HookFunction hookFunction2([]()
 		MH_EnableHook(MH_ALL_HOOKS);
 	}
 
-#ifdef IS_RDR3
+#if 0
 	// REDM1S: this patch will affect random places where this generic "return 14" method is used
 	// this obviously might cause random issues and this needs to be replaced with more viable patches.
 

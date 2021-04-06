@@ -4119,7 +4119,9 @@ static InitFunction initFunction([]()
 		if (g_oneSyncVar->GetValue() == fx::OneSyncState::On)
 		{
 			g_bigMode = true;
-			g_lengthHack = g_oneSyncPopulation->GetValue();
+
+			// REDM1S: not implemented in RedM yet, this will break FiveM!
+			g_lengthHack = false; // g_oneSyncPopulation->GetValue();
 
 			g_oneSyncBigMode->GetHelper()->SetRawValue(true);
 			g_oneSyncLengthHack->GetHelper()->SetRawValue(g_lengthHack);
