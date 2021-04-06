@@ -2854,6 +2854,14 @@ static void SkipCopyIf1s(void* a1, void* a2, void* a3, void* a4, void* a5)
 	}
 }
 
+#ifdef IS_RDR3
+static uint64_t CSyncedVarBase__GetMaxBits(void* self)
+{
+	// object id length + 1 extra bit
+	return ((icgi->OneSyncBigIdEnabled) ? 16 : 13) + 1;
+}
+#endif
+
 static HookFunction hookFunction2([]()
 {
 	// 2 matches, 1st is data, 2nd is parent
@@ -2904,6 +2912,26 @@ static HookFunction hookFunction2([]()
 
 		MH_EnableHook(MH_ALL_HOOKS);
 	}
+
+#ifdef IS_RDR3
+	// REDM1S: this patch will affect random places where this generic "return 14" method is used
+	// this obviously might cause random issues and this needs to be replaced with more viable patches.
+
+	// we also have to increase amount of allowed bits and distable id mappings for synced vars in order to support length hack
+	{
+		// getting random CSyncedVarBase inherited vtable
+		auto location = hook::get_address<char*>(hook::get_pattern("83 4E 18 FF 44 88 68 08 48 8D 05", 11));
+
+		// getting address of 13-th method (GetMaxBits) of CSyncedVarBase
+		auto method = *(uintptr_t*)((uint64_t)location + 8 * 13);
+
+		// make it use our special method with length hack support
+		hook::jump((void*)method, CSyncedVarBase__GetMaxBits);
+
+		// no-op the place where game calls UsesIdMappings as we don't use object id mappings
+		hook::nop(hook::get_pattern("48 8B 01 FF 90 ? ? ? ? 80 26 ? 48 8B CF", 3), 6);
+	}
+#endif
 });
 
 #include <mmsystem.h>
