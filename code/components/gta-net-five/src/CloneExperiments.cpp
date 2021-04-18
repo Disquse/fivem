@@ -3641,7 +3641,7 @@ static HookFunction hookFunctionWorldGrid([]()
 	// this patch above ^ shouldn't be needed with timeSync properly implemented, gamerIDs being set and RemotePlayer list fixes
 
 	// this should apply to both 1s and non-1s (as participants are - hopefully? - not used by anyone in regular net)
-	hook::jump(hook::get_pattern("84 C0 74 06 0F BF 43 38", -0x18), GetScriptParticipantIndexForPlayer);
+	hook::jump(hook::get_pattern("84 C0 74 06 0F ? 43 38", -0x18), GetScriptParticipantIndexForPlayer);
 
 #ifdef GTA_FIVE
 	// don't add 'maybe enough to give all our vehicles drivers' as a constraint for even creating one ped

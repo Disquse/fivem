@@ -148,14 +148,7 @@ public:
 	virtual void PostMigrate(int migrationType) = 0;
 	virtual void SetBlenderTimestamp(uint32_t) = 0;
 	virtual bool CheckPlayerHasAuthorityOverObject(void*) = 0;
-	virtual void ResetProximityControlTimer() = 0; // starting from here, order are unknown
-	virtual bool ShouldTeleportOnInitialCreation() = 0; // 80
-	virtual void ShouldFadeInOnInitialCreation() = 0;
-	virtual void DisplayNetworkInfo() = 0;
-	virtual int GetNumPlayersToUpdatePerBatch() = 0;
-	virtual void LogScopeReason(bool toggle, void* player, void* unk) = 0;
-
-	// REDM1S: there's also a sub with entity type script (aka AUTOMOBILE/SCRIPTED_AUTOMOBILE), might be useful for logs
+	virtual const char* GetTypeString() = 0;
 
 	inline uint16_t GetObjectId()
 	{
@@ -169,7 +162,7 @@ public:
 
 	inline std::string ToString()
 	{
-		return fmt::sprintf("[netObj:%d:%d]", GetObjectId(), GetObjectType());
+		return fmt::sprintf("[netObj:%d:%s]", GetObjectId(), GetTypeString());
 	}
 };
 

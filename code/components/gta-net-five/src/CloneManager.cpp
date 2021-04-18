@@ -2533,7 +2533,7 @@ void CloneManagerLocal::WriteUpdates()
 				{
 					if (IsDrilldown())
 					{
-						drillList.push_back({ syncType == 1 ? "create" : "sync", fmt::sprintf("obj:%d@%d[%s] sz %db", object->objectId, objectData.uniqifier, object->GetTypeString(), rlBuffer.GetDataLength()) });
+						drillList.push_back({ syncType == 1 ? "create" : "sync", fmt::sprintf("obj:%d@%d[%s] sz %db", object->GetObjectId(), objectData.uniqifier, object->GetTypeString(), rlBuffer.GetDataLength()) });
 					}
 
 					objectData.nextKeepaliveSync = ts + 1000;
