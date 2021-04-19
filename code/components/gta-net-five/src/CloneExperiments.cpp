@@ -1213,7 +1213,7 @@ static float*(*g_origGetNetPlayerRelevancePosition)(float* position, CNetGamePla
 
 static float* getNetPlayerRelevancePosition(float* position, CNetGamePlayer* player, void* unk)
 {
-	if (!player || player->physicalPlayerIndex() != 31)
+	if (!icgi->OneSyncEnabled || !player || player->physicalPlayerIndex() != 31)
 	{
 		return g_origGetNetPlayerRelevancePosition(position, player, unk);
 	}
