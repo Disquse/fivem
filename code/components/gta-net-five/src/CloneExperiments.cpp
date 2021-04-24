@@ -2841,6 +2841,7 @@ static void ManuallyDirtyNodeStub(rage::netSyncDataNodeBase* node, rage::netObje
 	DirtyNode(object, node);
 }
 
+#ifdef GTA_FIVE
 static void(*g_orig_netSyncDataNode_ForceSend)(void* node, int actFlag1, int actFlag2, rage::netObject* object);
 
 static void netSyncDataNode_ForceSendStub(rage::netSyncDataNodeBase* node, int actFlag1, int actFlag2, rage::netObject* object)
@@ -2854,6 +2855,21 @@ static void netSyncDataNode_ForceSendStub(rage::netSyncDataNodeBase* node, int a
 	// maybe needs to read act flags?
 	DirtyNode(object, node);
 }
+#elif IS_RDR3
+static void (*g_orig_netSyncDataNode_ForceSend)(void* node, int actFlag1, int actFlag2, rage::netObject* object, bool unk);
+
+static void netSyncDataNode_ForceSendStub(rage::netSyncDataNodeBase* node, int actFlag1, int actFlag2, rage::netObject* object, bool unk)
+{
+	if (!icgi->OneSyncEnabled)
+	{
+		g_orig_netSyncDataNode_ForceSend(node, actFlag1, actFlag2, object, unk);
+		return;
+	}
+
+	// maybe needs to read act flags?
+	DirtyNode(object, node);
+}
+#endif
 
 static void(*g_orig_netSyncDataNode_ForceSendToPlayer)(void* node, int player, int actFlag1, int actFlag2, rage::netObject* object);
 
