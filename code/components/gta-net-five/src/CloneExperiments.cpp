@@ -2040,6 +2040,7 @@ static void EventMgr_AddEvent(void* eventMgr, rage::netGameEvent* ev)
 		return;
 	}
 
+#ifdef GTA_FIVE
 	if (strcmp(ev->GetName(), "ALTER_WANTED_LEVEL_EVENT") == 0)
 	{
 		// do we already have 5 ALTER_WANTED_LEVEL_EVENT instances?
@@ -2061,6 +2062,7 @@ static void EventMgr_AddEvent(void* eventMgr, rage::netGameEvent* ev)
 			return;
 		}
 	}
+#endif
 
 	// is this a duplicate event?
 	for (auto& eventPair : g_events)
@@ -2088,6 +2090,7 @@ static bool EventNeedsOriginalPlayer(rage::netGameEvent* ev)
 {
 	auto nameHash = HashString(ev->GetName());
 
+#ifdef GTA_FIVE
 	// synced scenes depend on this to target the correct remote player
 	if (nameHash == HashString("REQUEST_NETWORK_SYNCED_SCENE_EVENT") ||
 		nameHash == HashString("START_NETWORK_SYNCED_SCENE_EVENT") ||
@@ -2096,6 +2099,7 @@ static bool EventNeedsOriginalPlayer(rage::netGameEvent* ev)
 	{
 		return true;
 	}
+#endif
 
 	return false;
 }
