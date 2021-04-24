@@ -1142,14 +1142,6 @@ bool CloneManagerLocal::HandleCloneCreate(const msgClone& msg)
 	auto isRemote = true;
 	auto owner = 31;
 
-#ifdef IS_RDR3
-	auto v18 = (*(__int64(__fastcall**)(void*))(*(uint64_t*)syncTree + 0x68i64))(syncTree);
-	if (v18)
-	{
-		auto maybeYes = (*(unsigned __int8(__fastcall**)(void*))(*(uint64_t*)v18 + 0xE8i64))((void*)v18);
-	}
-#endif
-
 	// create the object
 	auto obj = rage::CreateCloneObject(msg.GetEntityType(), msg.GetObjectId(), owner, 0, 32);
 
@@ -1177,15 +1169,19 @@ bool CloneManagerLocal::HandleCloneCreate(const msgClone& msg)
 
 #ifdef IS_RDR3
 	auto check = syncTree->m_18(obj, -1);
-	auto check2 = (*(unsigned __int8(__fastcall**)(void*))(*(uint64_t*)obj + 0x98))(obj);
+	auto canSync = obj->CanSyncWithNoGameObject();
 
-	if (!check && !check2)
+	if (!check && !canSync)
 	{
-		trace("Can't apply\n");
+		Log("%s: couldn't sync with no game object\n", __func__);
+
+		// delete the unapplied object
+		delete obj;
 		return false;
 	}
 
-	(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x248))(obj);
+	// calling pre-sync before applying
+	obj->PreSync();
 #endif
 
 	// apply object creation
@@ -1204,9 +1200,6 @@ bool CloneManagerLocal::HandleCloneCreate(const msgClone& msg)
 	// register with object mgr
 	rage::netObjectMgr::GetInstance()->RegisterNetworkObject(obj);
 
-	// REDM1S: merge this part of code, get rid of offsets, check if can remove some calls.
-
-#ifdef GTA_FIVE
 	// initialize blend
 	if (obj->GetBlender())
 	{
@@ -1219,25 +1212,6 @@ bool CloneManagerLocal::HandleCloneCreate(const msgClone& msg)
 	}
 
 	obj->m_1C0();
-#elif IS_RDR3
-
-	if (obj->GetBlender())
-	{
-		(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x250))(obj);
-
-		if ((*(unsigned __int8(__fastcall**)(void*))(*(uint64_t*)obj + 0x280))(obj))
-		{
-			obj->GetBlender()->m_70();
-		}
-
-		(*(void(__fastcall**)(void*, uint32_t))(*(uint64_t*)obj + 0x260))(obj, msg.GetTimestamp());
-
-		(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x240))(obj);
-
-		obj->GetBlender()->ApplyBlend();
-		obj->GetBlender()->m_38();
-	}
-#endif
 
 	// for the last time, ensure it's not local
 	if (obj->syncData.isRemote != isRemote || obj->syncData.ownerId != owner)
@@ -1407,17 +1381,15 @@ AckResult CloneManagerLocal::HandleCloneUpdate(const msgClone& msg)
 
 		AssociateSyncTree(obj->GetObjectId(), syncTree);
 
-#ifdef GTA_FIVE
+#ifdef IS_RDR3
+		obj->PreSync();
+#endif
+
 		// apply to object
 		syncTree->ApplyToObject(obj, nullptr);
 
 		// call post-apply
 		obj->m_1D0();
-#elif IS_RDR3
-		(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x248))(obj);
-		syncTree->ApplyToObject(obj, nullptr);
-		(*(void(__fastcall**)(void*))(*(uint64_t*)obj + 0x250))(obj);
-#endif
 	}
 
 	// update client id if changed

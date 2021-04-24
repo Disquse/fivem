@@ -1477,10 +1477,8 @@ static HookFunction hookFunction([]()
 	hook::nop(hook::get_pattern("4D 85 C9 74 46 F3", 3), 2);
 	hook::nop(hook::get_pattern("4D 85 C9 74 11 48 85", 3), 2);
 #elif IS_RDR3
-	// REDM1S: remove addresses (they're 1311.20)
-
 	{
-		auto p = hook::pattern("48 85 D2 74 09 48 8B 01 4D").count(2); // 0x142BD592C 0x142BD5418
+		auto p = hook::pattern("48 85 D2 74 09 48 8B 01 4D").count(2);
 
 		for (int i = 0; i < p.size(); i++)
 		{
@@ -1489,7 +1487,7 @@ static HookFunction hookFunction([]()
 	}
 
 	{
-		auto p = hook::pattern("48 85 D2 74 09 48 8B 01 45 8B").count(2); // 0x142BD53F0 0x142BD5904
+		auto p = hook::pattern("48 85 D2 74 09 48 8B 01 45 8B").count(2);
 
 		for (int i = 0; i < p.size(); i++)
 		{
@@ -1498,7 +1496,7 @@ static HookFunction hookFunction([]()
 	}
 
 	{
-		auto p = hook::pattern("48 85 D2 74 0A 48 8B 01 45 0F B7").count(2); // 0x142BD58D8 0x142BD51EB
+		auto p = hook::pattern("48 85 D2 74 0A 48 8B 01 45 0F B7").count(2);
 
 		for (int i = 0; i < p.size(); i++)
 		{
@@ -1507,7 +1505,7 @@ static HookFunction hookFunction([]()
 	}
 
 	{
-		auto p = hook::pattern("48 85 D2 74 0A 48 8B 01 45 0F B6").count(2); // 0x142BD51B3 142BD58AC
+		auto p = hook::pattern("48 85 D2 74 0A 48 8B 01 45 0F B6").count(2);
 
 		for (int i = 0; i < p.size(); i++)
 		{
@@ -1515,21 +1513,21 @@ static HookFunction hookFunction([]()
 		}
 	}
 
-	hook::nop(hook::get_pattern("4D 85 C9 74 0C 44 8A 02", 3), 2); // 0x142BD517C
-	hook::nop(hook::get_pattern("48 85 D2 74 0A 48 8B 01 45 0F BF", 3), 2); // 0x142BD53C4
-	hook::nop(hook::get_pattern("48 85 D2 74 0A 48 8B 01 45 0F BE", 3), 2); // 0x142BD5398
-	hook::nop(hook::get_pattern("48 85 D2 74 06 48 8B 01 FF 50 30", 3), 2); // 0x142BD524F
-	hook::nop(hook::get_pattern("48 85 D2 74 06 48 8B 01 FF 50 40", 3), 2); // 0x142BD521F
-	hook::nop(hook::get_pattern("48 85 D2 74 0B 48 8B 01 F3 41", 3), 2); // 0x142BD551C
-	hook::nop(hook::get_pattern("4D 85 C9 74 0D 44 0F B6 02", 3), 2); // 0x142BD5770
-	hook::nop(hook::get_pattern("48 85 DB 74 34 44 0F B7 0A", 3), 2); // 0x142BD5445
-	hook::nop(hook::get_pattern("4D 85 C9 74 38 F3 0F 10 42 08", 3), 2); // 0x142BD5797
-	hook::nop(hook::get_pattern("48 85 DB 74 4C 48 8D 54 24 30 48 8B C8", 3), 2); // 0x142BD54A8
-	hook::nop(hook::get_pattern("48 85 D2 74 38 F3 41 0F 10 40 08", 3), 2); // 0x142BD5954
-	hook::nop(hook::get_pattern("48 85 D2 74 47 F3 41 0F 10 40 0C", 3), 2); // 0x142BD57F0
-	hook::nop(hook::get_pattern("4D 85 C9 74 0D 48 8B 01 4C", 3), 2); // 0x142BD585D
-	hook::nop(hook::get_pattern("4D 85 C9 74 1B 8B 42 04 4C", 3), 2); // 0x142BD5543
-	hook::nop(hook::get_pattern("4D 85 C9 74 13 44 8B 0A 4C", 3), 2); // 0x142BD52D7
+	hook::nop(hook::get_pattern("4D 85 C9 74 0C 44 8A 02", 3), 2);
+	hook::nop(hook::get_pattern("48 85 D2 74 0A 48 8B 01 45 0F BF", 3), 2);
+	hook::nop(hook::get_pattern("48 85 D2 74 0A 48 8B 01 45 0F BE", 3), 2);
+	hook::nop(hook::get_pattern("48 85 D2 74 06 48 8B 01 FF 50 30", 3), 2);
+	hook::nop(hook::get_pattern("48 85 D2 74 06 48 8B 01 FF 50 40", 3), 2);
+	hook::nop(hook::get_pattern("48 85 D2 74 0B 48 8B 01 F3 41", 3), 2);
+	hook::nop(hook::get_pattern("4D 85 C9 74 0D 44 0F B6 02", 3), 2);
+	hook::nop(hook::get_pattern("48 85 DB 74 34 44 0F B7 0A", 3), 2);
+	hook::nop(hook::get_pattern("4D 85 C9 74 38 F3 0F 10 42 08", 3), 2);
+	hook::nop(hook::get_pattern("48 85 DB 74 4C 48 8D 54 24 30 48 8B C8", 3), 2);
+	hook::nop(hook::get_pattern("48 85 D2 74 38 F3 41 0F 10 40 08", 3), 2);
+	hook::nop(hook::get_pattern("48 85 D2 74 47 F3 41 0F 10 40 0C", 3), 2);
+	hook::nop(hook::get_pattern("4D 85 C9 74 0D 48 8B 01 4C", 3), 2);
+	hook::nop(hook::get_pattern("4D 85 C9 74 1B 8B 42 04 4C", 3), 2);
+	hook::nop(hook::get_pattern("4D 85 C9 74 13 44 8B 0A 4C", 3), 2);
 #endif
 });
 

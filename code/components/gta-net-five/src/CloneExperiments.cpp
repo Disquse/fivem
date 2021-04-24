@@ -2911,17 +2911,15 @@ static HookFunction hookFunction2([]()
 {
 	// 2 matches, 1st is data, 2nd is parent
 	{
+#ifndef ONESYNC_CLONING_NATIVES
 #ifdef GTA_FIVE
 		auto location = hook::get_pattern<char>("48 89 44 24 20 E8 ? ? ? ? 84 C0 0F 95 C0 48 83 C4 58", -0x3C);
 		hook::set_call(&g_origWriteDataNode, location + 0x41);
 #elif IS_RDR3
-#ifndef ONESYNC_CLONING_NATIVES
 		auto location = hook::get_pattern<char>("49 89 43 C8 E8 ? ? ? ? 84 C0 0F 95 C0 48 83 C4 58", -0x3E);
 		hook::set_call(&g_origWriteDataNode, location + 0x42);
 #endif
-#endif
 
-#ifndef ONESYNC_CLONING_NATIVES
 		hook::jump(location, WriteDataNodeStub);
 #endif
 	}
