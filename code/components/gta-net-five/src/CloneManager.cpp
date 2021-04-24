@@ -2056,6 +2056,7 @@ void CloneManagerLocal::Update()
 #elif IS_RDR3
 			clone.second->MainThreadUpdate();
 			clone.second->DependencyThreadUpdate();
+			clone.second->PostDependencyThreadUpdate();
 #endif
 
 #ifdef GTA_FIVE
