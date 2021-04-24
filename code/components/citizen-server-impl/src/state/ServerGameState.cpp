@@ -431,7 +431,7 @@ FocusResult GetPlayerFocusPos(const fx::sync::SyncEntityPtr& entity)
 	float playerPos[3];
 	syncTree->GetPosition(playerPos);
 
-	return { playerPos[0], playerPos[1], playerPos[2] };
+	return { { playerPos[0], playerPos[1], playerPos[2] } };
 
 	// REDM1S: todo
 #if 0
@@ -1094,7 +1094,6 @@ void ServerGameState::Tick(fx::ServerInstanceBase* instance)
 				else if (entityData.hasCreated || entityData.hasNAckedCreate)
 				{
 					GS_LOG("destroying entity %d:%d:%d for client %d due to scope exit\n", entity->handle, entity->uniqifier, entity->type, client->GetNetId());
-					GS_LOG(" - player  (%f, %f, %f) / entity (%f, %f, %f)\n", playerPos.x, playerPos.y, playerPos.z, entityPos.x, entityPos.y, entityPos.z);
 					clientDataUnlocked->entitiesToDestroy[entIdentifier] = { entity, { true, false } };
 				}
 			}
