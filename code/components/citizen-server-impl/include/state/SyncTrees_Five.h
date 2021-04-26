@@ -1203,7 +1203,6 @@ struct CHerdPositionNode
 	}
 };
 
-struct CPlayerWantedAndLOSDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CDraftVehCreationDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CStatsTrackerGameStateDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CWorldStateBaseDataNode { bool Parse(SyncParseState& state) { return true; } };
@@ -1223,8 +1222,30 @@ struct CGroupScenarioFrequentDataNode { bool Parse(SyncParseState& state) { retu
 struct CGroupScenarioEntitiesDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CGroupScenarioCreationDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CPropSetCreationDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPlayerWeaponInventoryDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPropSetGameStateDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPropSetUncommonGameStateDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CIncidentStateDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CIncidentCrimeSceneDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CIncidentPointOfInterestFinderDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CIncidentDispatchDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CIncidentOrderDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CGuardZoneStateDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CGuardZoneGuardDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CGuardZonePointOfInterestFinderDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CCombatDirectorCreateUpdateDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPedWeaponDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPedVehicleDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPlayerCharacterCreatorDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPlayerAmbientModelStreamingDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPlayerVoiceDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPlayerHealthDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPlayerSpawnSearchDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPlayerAudioScriptBankDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPlayerGoalsDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CPlayerCameraUncommonDataNode { bool Parse(SyncParseState& state) { return true; } };
 
-// REDM1S: unknown rdr3 nodes (addresses are 1311.20)
+// REDM1S: unknown rdr3 data nodes (addresses are 1311.20)
 struct DataNode_1435984c0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143598330 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143598fb0 { bool Parse(SyncParseState& state) { return true; } };
@@ -1269,8 +1290,6 @@ struct DataNode_143595418 { bool Parse(SyncParseState& state) { return true; } }
 struct DataNode_14359a400 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359a720 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359b588 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359b3f8 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359b718 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359ba38 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359bbc8 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359b0d8 { bool Parse(SyncParseState& state) { return true; } };
@@ -1278,19 +1297,8 @@ struct DataNode_1435a0a20 { bool Parse(SyncParseState& state) { return true; } }
 struct DataNode_14359cd00 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359ce90 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359d020 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359d4d0 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359d340 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359d7f0 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359d980 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359db10 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359cb70 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359e2e0 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359d1b0 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359dca0 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359de30 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359dfc0 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359e150 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359c9e0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359d660 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435a03d0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435a0238 { bool Parse(SyncParseState& state) { return true; } };
@@ -1298,22 +1306,11 @@ struct DataNode_1435a0568 { bool Parse(SyncParseState& state) { return true; } }
 struct DataNode_1435a1838 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435a19c8 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435a1b58 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_1435a0ed8 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_1435a1068 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_1435931b8 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_143593348 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_1435934d8 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_143593668 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_1435937f8 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_143595740 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_1435958d0 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_143595a60 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143595bf0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_1435929e0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143592b70 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143592e90 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143592d00 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_14359bd58 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359bef0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359c080 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359c210 { bool Parse(SyncParseState& state) { return true; } };
@@ -2119,8 +2116,8 @@ using CPedSyncTree = SyncTree<
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359a400>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359a720>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359b588>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359b3f8>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359b718>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedWeaponDataNode>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedVehicleDataNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359ba38>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359bbc8>,
 			NodeWrapper<NodeIds<87, 87, 1>, DataNode_14359b0d8>
@@ -2374,24 +2371,24 @@ using CPlayerSyncTree = SyncTree<
 			NodeWrapper<NodeIds<127, 127, 0>, DataNode_14359a8b0>,
 			NodeWrapper<NodeIds<86, 86, 0>, DataNode_14359aa40>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143598c90>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359d4d0>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359d340>,
-			NodeWrapper<NodeIds<86, 86, 0>, DataNode_14359d7f0>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359d980>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPlayerAppearanceDataNode>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPlayerCharacterCreatorDataNode>,
+			NodeWrapper<NodeIds<86, 86, 0>, CPlayerAmbientModelStreamingDataNode>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPlayerGamerDataNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359db10>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359cb70>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359e2e0>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359b3f8>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359b718>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359d1b0>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359dca0>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359de30>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPlayerVoiceDataNode>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPlayerWeaponInventoryDataNode>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedWeaponDataNode>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPedVehicleDataNode>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPlayerHealthDataNode>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPlayerSpawnSearchDataNode>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPlayerAudioScriptBankDataNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359dfc0>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359dfc0>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359dfc0>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359dfc0>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359dfc0>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359e150>,
+			NodeWrapper<NodeIds<87, 87, 0>, CPlayerGoalsDataNode>,
 			NodeWrapper<NodeIds<87, 87, 1>, DataNode_14359b0d8>,
 			NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359a720>
 		>,
@@ -2413,7 +2410,7 @@ using CPlayerSyncTree = SyncTree<
 			NodeWrapper<NodeIds<87, 87, 0>, CSectorDataNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, CPlayerSectorPosNode>,
 			NodeWrapper<NodeIds<86, 86, 0>, CPlayerCameraDataNode>,
-			NodeWrapper<NodeIds<86, 86, 0>, DataNode_14359c9e0>,
+			NodeWrapper<NodeIds<86, 86, 0>, CPlayerCameraUncommonDataNode>,
 			NodeWrapper<NodeIds<86, 86, 0>, DataNode_14359d660>
 		>,
 		ParentNode<
@@ -2621,8 +2618,8 @@ using CPropSetSyncTree = SyncTree<
 		NodeWrapper<NodeIds<87, 87, 0>, CEntityScriptInfoDataNode>,
 		NodeWrapper<NodeIds<4, 0, 0>, CMigrationDataNode>,
 		NodeWrapper<NodeIds<127, 127, 0>, CGlobalFlagsDataNode>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435a0ed8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435a1068>
+		NodeWrapper<NodeIds<127, 127, 0>, CPropSetGameStateDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CPropSetUncommonGameStateDataNode>
 	>
 >;
 using CAnimSceneSyncTree = SyncTree<
@@ -2800,25 +2797,25 @@ using CIncidentSyncTree = SyncTree<
 	ParentNode<
 		NodeIds<127, 0, 0>,
 		NodeWrapper<NodeIds<1, 0, 0>, CIncidentCreateDataNode>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435931b8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_143593348>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435934d8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_143593668>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435937f8>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentStateDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentCrimeSceneDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentPointOfInterestFinderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentDispatchDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CIncidentOrderDataNode>,
 		NodeWrapper<NodeIds<87, 87, 0>, CEntityScriptInfoDataNode>,
 		NodeWrapper<NodeIds<4, 0, 0>, CMigrationDataNode>,
 		NodeWrapper<NodeIds<127, 127, 0>, CGlobalFlagsDataNode>
@@ -2828,12 +2825,12 @@ using CGuardzoneSyncTree = SyncTree<
 	ParentNode<
 		NodeIds<127, 0, 0>,
 		NodeWrapper<NodeIds<1, 0, 0>, CGuardzoneCreateDataNode>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_143595740>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435958d0>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_143595a60>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_143595a60>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_143595a60>,
-		NodeWrapper<NodeIds<127, 127, 0>, DataNode_143595a60>,
+		NodeWrapper<NodeIds<127, 127, 0>, CGuardZoneStateDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CGuardZoneGuardDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CGuardZonePointOfInterestFinderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CGuardZonePointOfInterestFinderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CGuardZonePointOfInterestFinderDataNode>,
+		NodeWrapper<NodeIds<127, 127, 0>, CGuardZonePointOfInterestFinderDataNode>,
 		NodeWrapper<NodeIds<127, 127, 0>, DataNode_143595bf0>,
 		NodeWrapper<NodeIds<127, 127, 0>, DataNode_143595bf0>,
 		NodeWrapper<NodeIds<127, 127, 0>, DataNode_143595bf0>,
@@ -2859,7 +2856,7 @@ using CPedGroupSyncTree = SyncTree<
 using CCombatDirectorSyncTree = SyncTree<
 	ParentNode<
 		NodeIds<127, 0, 0>,
-		NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359bd58>,
+		NodeWrapper<NodeIds<87, 87, 0>, CCombatDirectorCreateUpdateDataNode>,
 		NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359bef0>,
 		NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359c080>,
 		NodeWrapper<NodeIds<87, 87, 0>, DataNode_14359c210>,
