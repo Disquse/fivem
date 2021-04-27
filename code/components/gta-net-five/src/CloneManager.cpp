@@ -2197,7 +2197,7 @@ static hook::cdecl_stub<bool(const Vector3* position, float radius, float maxDis
 #ifdef GTA_FIVE
 	return hook::get_call(hook::get_pattern("0F 29 4C 24 30 0F 28 C8 E8", 8));
 #elif IS_RDR3
-	return hook::get_call(hook::get_pattern("0F 14 D3 0F 29 54 24 ? 0F 28 D5 E8", 11));
+	return hook::get_pattern("44 0F 28 C2 4C 8B F9 4D 85 C9 74", -0x30);
 #endif
 });
 
@@ -2367,8 +2367,6 @@ void CloneManagerLocal::WriteUpdates()
 		// get latency stuff
 		auto syncLatency = 50ms;
 
-		// REDM1S: implement it
-#ifdef GTA_FIVE
 		if (object->GetGameObject())
 		{
 			auto entity = (fwEntity*)object->GetGameObject();
@@ -2379,7 +2377,6 @@ void CloneManagerLocal::WriteUpdates()
 				syncLatency = 250ms;
 			}
 		}
-#endif
 
 		// players get instant sync
 		if (object->GetObjectType() == (uint16_t)NetObjEntityType::Player)
