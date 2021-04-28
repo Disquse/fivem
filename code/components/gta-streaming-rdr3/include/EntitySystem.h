@@ -9,7 +9,7 @@
 #endif
 
 using Vector3 = DirectX::XMFLOAT3;
-using Matrix4x4 = DirectX::XMFLOAT4X4;
+using Matrix3x4 = DirectX::XMFLOAT3X4;
 
 class fwEntity;
 
@@ -33,6 +33,15 @@ namespace rage
 	};
 
 	using fwEntity = ::fwEntity;
+
+	struct PreciseTransform : Matrix3x4
+	{
+		struct
+		{
+			float offsetX, offsetY, z;
+			int16_t sectorX, sectorY;
+		} position;
+	};
 }
 
 class STREAMING_EXPORT fwEntity : public rage::fwRefAwareBase
@@ -77,7 +86,7 @@ public:
 	}
 
 public:
-	inline const Matrix4x4& GetTransform() const
+	inline const rage::PreciseTransform& GetTransform() const
 	{
 		return m_transform;
 	}
@@ -85,9 +94,9 @@ public:
 	inline Vector3 GetPosition() const
 	{
 		return Vector3(
-			m_bbMin.x + (m_bbMax.x - m_bbMin.x) / 2,
-			m_bbMin.y + (m_bbMax.y - m_bbMin.y) / 2,
-			m_bbMin.z + (m_bbMax.z - m_bbMin.z) / 2
+			m_transform.position.sectorX * 32 + m_transform.position.offsetX,
+			m_transform.position.sectorY * 32 + m_transform.position.offsetY,
+			m_transform.position.z
 		);
 	}
 
@@ -106,11 +115,7 @@ private:
 	char m_pad[40]; // +8
 	uint8_t m_entityType; // +48
 	char m_pad2[15]; // +49
-	Matrix4x4 m_transform; // +64
+	rage::PreciseTransform m_transform; // +64
 	char m_pad3[96]; // +128
 	void* m_netObject; // +224
-	char m_pad4[72]; // +232
-	Vector3 m_bbMin; // +304
-	char m_pad5[4]; // +316
-	Vector3 m_bbMax; // +320
 };
