@@ -13,35 +13,52 @@ using Matrix3x4 = DirectX::XMFLOAT3X4;
 
 class fwEntity;
 
+class STREAMING_EXPORT fwArchetype
+{
+public:
+	virtual ~fwArchetype() = default;
+};
+
 namespace rage
 {
-	class STREAMING_EXPORT fwRefAwareBase
+struct fwModelId
+{
+	uint64_t id;
+};
+
+class STREAMING_EXPORT fwArchetypeManager
+{
+public:
+	static fwArchetype* GetArchetypeFromHashKey(uint32_t hash, fwModelId& id);
+};
+
+class STREAMING_EXPORT fwRefAwareBase
+{
+public:
+	~fwRefAwareBase() = default;
+
+public:
+	void AddKnownRef(void** ref) const;
+
+	void RemoveKnownRef(void** ref) const;
+};
+
+class STREAMING_EXPORT fwScriptGuid
+{
+public:
+	static fwEntity* GetBaseFromGuid(int handle);
+};
+
+using fwEntity = ::fwEntity;
+
+struct PreciseTransform : Matrix3x4
+{
+	struct
 	{
-	public:
-		~fwRefAwareBase() = default;
-
-	public:
-		void AddKnownRef(void** ref) const;
-
-		void RemoveKnownRef(void** ref) const;
-	};
-
-	class STREAMING_EXPORT fwScriptGuid
-	{
-	public:
-		static fwEntity* GetBaseFromGuid(int handle);
-	};
-
-	using fwEntity = ::fwEntity;
-
-	struct PreciseTransform : Matrix3x4
-	{
-		struct
-		{
-			float offsetX, offsetY, z;
-			int16_t sectorX, sectorY;
-		} position;
-	};
+		float offsetX, offsetY, z;
+		int16_t sectorX, sectorY;
+	} position;
+};
 }
 
 class STREAMING_EXPORT fwEntity : public rage::fwRefAwareBase
