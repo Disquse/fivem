@@ -850,8 +850,9 @@ struct GameStateClientData : public sync::ClientSyncDataBase
 
 	fx::ClientWeakPtr client;
 
-	eastl::fixed_hash_map<int, int, 128> playersToSlots;
-	eastl::bitset<128> playersInScope;
+	// REDM1S: only 32 players can be in scope for now, 128 for FiveM
+	eastl::fixed_hash_map<int, int, 32> playersToSlots;
+	eastl::bitset<32> playersInScope;
 	
 	// use fixed_map to make insertion into the vector_map cheap (as sorted)
 	eastl::fixed_map<uint32_t, SyncedEntityData, 256> syncedEntities;
