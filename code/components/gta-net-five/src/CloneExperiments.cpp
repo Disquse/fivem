@@ -743,7 +743,7 @@ static CNetGamePlayer* AllocateNetPlayer(void* mgr)
 #ifdef GTA_FIVE
 	void* plr = malloc(xbr::IsGameBuildOrGreater<2060>() ? 688 : 672);
 #elif IS_RDR3
-	void* plr = malloc(2784); // for 1207: 2640
+	void* plr = malloc(2784);
 #endif
 
 	auto player = _netPlayerCtor(plr);
@@ -1783,7 +1783,7 @@ static HookFunction hookFunction([]()
 #endif
 
 		hook::nop(location, 6);
-		hook::call(location, mD0Stub); // (RDR3) in 1207 it was 0xB0, in 1311 it's 0xC0
+		hook::call(location, mD0Stub);
 	}
 
 #ifdef GTA_FIVE
@@ -2944,7 +2944,6 @@ static HookFunction hookFunction2([]()
 		MH_CreateHook(hook::get_pattern("85 51 28 0F 84 E4 00 00 00 33 DB", -0x24), netSyncDataNode_ForceSendStub, (void**)&g_orig_netSyncDataNode_ForceSend);
 		MH_CreateHook(hook::get_pattern("44 85 41 28 74 73 83 79 30 00", -0x1F), netSyncDataNode_ForceSendToPlayerStub, (void**)&g_orig_netSyncDataNode_ForceSendToPlayer);
 #elif IS_RDR3
-		// for 1207: MH_CreateHook(hook::get_pattern("48 8B 03 48 8B CB 8B 7F 3C FF 50 20 80", -0x27), ManuallyDirtyNodeStub, (void**)&g_origManuallyDirtyNode);
 		MH_CreateHook(hook::get_pattern("FF 50 20 8B 57 3C 48 8B C8 E8", -0x29), ManuallyDirtyNodeStub, (void**)&g_origManuallyDirtyNode);
 		MH_CreateHook(hook::get_pattern("85 51 28 0F 84 ? ? ? ? 33 DB 39", -0x24), netSyncDataNode_ForceSendStub, (void**)&g_orig_netSyncDataNode_ForceSend);
 		MH_CreateHook(hook::get_pattern("44 85 41 28 0F 84 ? ? ? ? 83", -0x18), netSyncDataNode_ForceSendToPlayerStub, (void**)&g_orig_netSyncDataNode_ForceSendToPlayer);
