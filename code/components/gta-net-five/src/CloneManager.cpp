@@ -86,8 +86,6 @@ CNetGamePlayer* GetLocalPlayer();
 
 CNetGamePlayer* GetPlayerByNetId(uint16_t);
 
-static bool g_doShit;
-
 void UpdateTime(uint64_t serverTime, bool isInit = false);
 
 bool IsWaitingForTimeSync();
@@ -1963,46 +1961,6 @@ void CloneManagerLocal::Update()
 	WriteUpdates();
 #endif
 
-	{
-		static bool didShit;
-
-		if (!didShit)
-		{
-			if (Instance<ICoreGameInit>::Get()->HasVariable("networkInited"))
-			{
-				if (g_doShit)
-				{
-					for (int i = 0; i < 1; i++)
-					{
-						TempHackMakePhysicalPlayer(1);
-
-						msgClone msg;
-						msg.m_clientId = 1;
-						msg.m_handle = i + 256;
-						msg.m_entityType = NetObjEntityType::Player;
-						msg.m_syncType = 1;
-						msg.m_timestamp = rage::netInterface_queryFunctions::GetInstance()->GetTimestamp();
-						msg.m_objectId = i + 256;
-
-						FILE* f = fopen("G:/CitizenFX/player_1.bin", "rb");
-						fseek(f, 0, SEEK_END);
-						int len = ftell(f);
-						fseek(f, 0, SEEK_SET);
-
-						msg.m_cloneData.resize(len);
-						fread(msg.m_cloneData.data(), 1, len, f);
-
-						fclose(f);
-
-						HandleCloneCreate(msg);
-					}
-
-					didShit = true;
-				}
-			}
-		}
-	}
-
 	SendUpdates(m_sendBuffer, HashString("netClones"));
 
 	if (icgi->NetProtoVersion < 0x202007022353 || (icgi->NetProtoVersion >= 0x202011231556 && icgi->SyncIsARQ))
@@ -2010,6 +1968,7 @@ void CloneManagerLocal::Update()
 		SendUpdates(m_ackBuffer, HashString("netAcks"));
 	}
 
+	// REDM1S: implement scene optimizations
 #ifdef GTA_FIVE
 	alignas(16) float centerOfWorld[4];
 	getCoordsFromOrigin(origin, centerOfWorld);
@@ -2384,6 +2343,7 @@ void CloneManagerLocal::WriteUpdates()
 			syncLatency = 0ms;
 		}
 
+		// REDM1S: implement for vehicles and mounts
 #ifdef GTA_FIVE
 		// player-occupied vehicles do as well
 		else if (object->GetGameObject() && ((fwEntity*)object->GetGameObject())->IsOfType(HashString("CVehicle")))
@@ -2742,11 +2702,5 @@ static InitFunction initFunction([]()
 	OnKillNetworkDone.Connect([]()
 	{
 		TheClones->Reset();
-	});
-
-	static ConsoleCommand cmd("doshit", []()
-	{
-		g_doShit = true;
-		trace("do shit\n");
 	});
 });

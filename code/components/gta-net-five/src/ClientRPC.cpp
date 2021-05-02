@@ -28,8 +28,6 @@ extern NetLibrary* g_netLibrary;
 
 #include <concurrentqueue.h>
 
-// REDM1S: not reviewed for RDR3, needs to return fwArchetype checks and ifdef some native calls
-
 class FxNativeInvoke
 {
 private:

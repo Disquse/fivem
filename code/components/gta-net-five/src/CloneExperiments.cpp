@@ -782,7 +782,7 @@ static void PassObjectControlStub(CNetGamePlayer* player, rage::netObject* netOb
 	netObject->syncData.nextOwnerId = 31;
 	TheClones->SetTargetOwner(netObject, g_netIdsByPlayer[player]);
 
-	// REDM1S: implement
+	// REDM1S: implement for vehicles and mounts
 #ifdef GTA_FIVE
 	fwEntity* entity = (fwEntity*)netObject->GetGameObject();
 	if (entity && entity->IsOfType(HashString("CVehicle")))
@@ -1969,7 +1969,6 @@ namespace rage
 
 			if (findEvent == g_eventNames.end())
 			{
-				assert("Unknown event name");
 				return "UNKNOWN_EVENT";
 			}
 
@@ -2532,9 +2531,7 @@ static void SendAlterWantedLevelEvent2Hook(void* a1, void* a2, void* a3, void* a
 
 	g_origSendAlterWantedLevelEvent2(a1, a2, a3, a4);
 }
-#endif
 
-#ifdef GTA_FIVE
 std::string GetType(void* d);
 
 static void NetEventError()
@@ -2577,12 +2574,12 @@ static void NetEventError()
 #endif
 
 #ifdef IS_RDR3
-static void* (*g_origRegisterGameEvent)(void*, uint16_t, void*, const char*);
+static void*(*g_origRegisterNetGameEvent)(void*, uint16_t, void*, const char*);
 
-static void* RegisterGameEvent(void* eventMgr, uint16_t eventId, void* func, const char* name)
+static void* RegisterNetGameEvent(void* eventMgr, uint16_t eventId, void* func, const char* name)
 {
 	g_eventNames.insert({ eventId, name });
-	return g_origRegisterGameEvent(eventMgr, eventId, func, name);
+	return g_origRegisterNetGameEvent(eventMgr, eventId, func, name);
 }
 #endif
 
@@ -2597,9 +2594,9 @@ static HookFunction hookFunctionEv([]()
 		MH_CreateHook(hook::get_call(location + 7), EventMgr_AddEvent, (void**)&g_origAddEvent);
 	}
 
-	// we hook game event registration for storing event names
+	// we hook game event registration to store event names
 #ifdef IS_RDR3
-	MH_CreateHook(hook::get_pattern("48 83 C1 08 0F B7 FA E8 ? ? ? ? B8", -0x1A), RegisterGameEvent, (void**)&g_origRegisterGameEvent);
+	MH_CreateHook(hook::get_pattern("48 83 C1 08 0F B7 FA E8 ? ? ? ? B8", -0x1A), RegisterNetGameEvent, (void**)&g_origRegisterNetGameEvent);
 #endif
 
 #ifdef GTA_FIVE
@@ -2955,26 +2952,6 @@ static HookFunction hookFunction2([]()
 
 		MH_EnableHook(MH_ALL_HOOKS);
 	}
-
-#if 0
-	// REDM1S: this patch will affect random places where this generic "return 14" method is used
-	// this obviously might cause random issues and this needs to be replaced with more viable patches.
-
-	// we also have to increase amount of allowed bits and distable id mappings for synced vars in order to support length hack
-	{
-		// getting random CSyncedVarBase inherited vtable
-		auto location = hook::get_address<char*>(hook::get_pattern("83 4E 18 FF 44 88 68 08 48 8D 05", 11));
-
-		// getting address of 13-th method (GetMaxBits) of CSyncedVarBase
-		auto method = *(uintptr_t*)((uint64_t)location + 8 * 13);
-
-		// make it use our special method with length hack support
-		hook::jump((void*)method, CSyncedVarBase__GetMaxBits);
-
-		// no-op the place where game calls UsesIdMappings as we don't use object id mappings
-		hook::nop(hook::get_pattern("48 8B 01 FF 90 ? ? ? ? 80 26 ? 48 8B CF", 3), 6);
-	}
-#endif
 });
 
 #include <mmsystem.h>
@@ -3661,8 +3638,6 @@ static HookFunction hookFunctionWorldGrid([]()
 	hook::jump(hook::get_pattern(((xbr::IsGameBuildOrGreater<2060>()) ? "BE 01 00 00 00 8B E8 85 C0 0F 84 B8" : "BE 01 00 00 00 45 33 C9 40 88 74 24 20"), ((xbr::IsGameBuildOrGreater<2060>()) ? -0x3A : -0x2D)), DoesLocalPlayerOwnWorldGrid);
 #elif IS_RDR3
 	hook::jump(hook::get_pattern("0F 28 01 4C 8D 44 24 30 0F", -0xA), DoesLocalPlayerOwnWorldGrid);
-
-	// REDM1S: more world grid patches?
 #endif
 
 	MH_Initialize();

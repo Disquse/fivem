@@ -25,7 +25,7 @@
 
 #include <Hooking.h>
 
-// REDM1S: crashes when viewing some specific nodes, not all data is printed, missing some stuff comparing to V
+// REDM1S: not all data from nodes is printed
 
 inline size_t GET_NIDX(rage::netSyncTree* tree, void* node)
 {
