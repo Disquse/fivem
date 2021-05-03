@@ -1203,6 +1203,40 @@ struct CHerdPositionNode
 	}
 };
 
+// REDM1S: unverified name
+struct CObjectSectorDataNode
+{
+	int m_sectorX;
+	int m_sectorY;
+	int m_sectorZ;
+
+	bool Parse(SyncParseState& state)
+	{
+		auto sectorX = state.buffer.Read<int>(10);
+		auto sectorY = state.buffer.Read<int>(10);
+		auto sectorZ = state.buffer.Read<int>(6);
+
+		m_sectorX = sectorX;
+		m_sectorY = sectorY;
+		m_sectorZ = sectorZ;
+
+		state.entity->syncTree->CalculatePosition();
+
+		return true;
+	}
+
+	bool Unparse(sync::SyncUnparseState& state)
+	{
+		rl::MessageBuffer& buffer = state.buffer;
+
+		buffer.Write<int>(10, m_sectorX);
+		buffer.Write<int>(10, m_sectorY);
+		buffer.Write<int>(6, m_sectorZ);
+
+		return true;
+	}
+};
+
 struct CDraftVehCreationDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CStatsTrackerGameStateDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CWorldStateBaseDataNode { bool Parse(SyncParseState& state) { return true; } };
@@ -1244,6 +1278,7 @@ struct CPlayerSpawnSearchDataNode { bool Parse(SyncParseState& state) { return t
 struct CPlayerAudioScriptBankDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CPlayerGoalsDataNode { bool Parse(SyncParseState& state) { return true; } };
 struct CPlayerCameraUncommonDataNode { bool Parse(SyncParseState& state) { return true; } };
+struct CObjectAITaskDataNode { bool Parse(SyncParseState& state) { return true; } };
 
 // REDM1S: unknown rdr3 data nodes (addresses are 1311.20)
 struct DataNode_1435984c0 { bool Parse(SyncParseState& state) { return true; } };
@@ -1285,8 +1320,6 @@ struct DataNode_1435960a8 { bool Parse(SyncParseState& state) { return true; } }
 struct DataNode_14359f5a0 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143594478 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_143594dd8 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_1435950f8 { bool Parse(SyncParseState& state) { return true; } };
-struct DataNode_143595418 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359a400 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359a720 { bool Parse(SyncParseState& state) { return true; } };
 struct DataNode_14359b588 { bool Parse(SyncParseState& state) { return true; } };
@@ -1378,15 +1411,30 @@ struct SyncTree : public SyncTreeBase
 		auto [hasSpdn, secPosDataNode] = GetData<CSectorPositionDataNode>();
 		auto [hasWpdn, projectileDataNode] = GetData<CWorldProjectileDataNode>();
 		auto [hasPspdn, playerSecPosDataNode] = GetData<CPlayerSectorPosNode>();
+		auto [hasOsdn, objectSecDataNode] = GetData<CObjectSectorDataNode>();
 		auto [hasOspdn, objectSecPosDataNode] = GetData<CObjectSectorPosNode>();
 		auto [hasPspmdn, pedSecPosMapDataNode] = GetData<CPedSectorPosMapNode>();
 		auto [hasDoor, doorCreationDataNode] = GetData<CDoorCreationDataNode>();
 		auto [hasPgsdn, pedGameStateDataNode] = GetData<CPedGameStateDataNode>();
 		auto [hasHpn, herdPosNode] = GetData<CHerdPositionNode>();
 
-		auto sectorX = (hasSdn) ? secDataNode->m_sectorX : (hasWpdn) ? projectileDataNode->m_sectorX : 512;
-		auto sectorY = (hasSdn) ? secDataNode->m_sectorY : (hasWpdn) ? projectileDataNode->m_sectorY : 512;
-		auto sectorZ = (hasSdn) ? secDataNode->m_sectorZ : (hasWpdn) ? projectileDataNode->m_sectorZ : 0;
+		auto sectorX =
+			(hasSdn) ? secDataNode->m_sectorX :
+				(hasOsdn) ? objectSecDataNode->m_sectorX :
+					(hasWpdn) ? projectileDataNode->m_sectorX :
+						512;
+
+		auto sectorY =
+			(hasSdn) ? secDataNode->m_sectorY :
+				(hasOsdn) ? objectSecDataNode->m_sectorY :
+					(hasWpdn) ? projectileDataNode->m_sectorY :
+						512;
+
+		auto sectorZ =
+			(hasSdn) ? secDataNode->m_sectorZ :
+				(hasOsdn) ? objectSecDataNode->m_sectorZ :
+					(hasWpdn) ? projectileDataNode->m_sectorZ :
+						0;
 
 		auto sectorPosX =
 			(hasSpdn) ? secPosDataNode->m_posX :
@@ -2032,8 +2080,8 @@ using CObjectSyncTree = SyncTree<
 					NodeWrapper<NodeIds<127, 127, 0>, CDynamicEntityGameStateDataNode>,
 					NodeWrapper<NodeIds<127, 127, 0>, CPhysicalGameStateDataNode>,
 					NodeWrapper<NodeIds<127, 127, 0>, DataNode_143594dd8>,
-					NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435950f8>,
-					NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435950f8>,
+					NodeWrapper<NodeIds<127, 127, 0>, CObjectAITaskDataNode>,
+					NodeWrapper<NodeIds<127, 127, 0>, CObjectAITaskDataNode>,
 					NodeWrapper<NodeIds<127, 127, 0>, DataNode_143594ab8>
 				>,
 				ParentNode<
@@ -2048,7 +2096,7 @@ using CObjectSyncTree = SyncTree<
 		>,
 		ParentNode<
 			NodeIds<87, 87, 0>,
-			NodeWrapper<NodeIds<87, 87, 0>, DataNode_143595418>,
+			NodeWrapper<NodeIds<87, 87, 0>, CObjectSectorDataNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, CObjectSectorPosNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, CEntityOrientationDataNode>,
 			NodeWrapper<NodeIds<87, 87, 0>, CPhysicalVelocityDataNode>,
